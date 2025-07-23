@@ -1,5 +1,5 @@
-// Preset Export Engine - GOD MODE ACTIVATED!
-// Handles professional export workflows with platform-specific ZIP packaging
+// Preset Export Engine
+// Manages export workflows, including platform-specific ZIP packaging and preset handling.
 
 import JSZip from 'jszip';
 import { ExportPreset, generatePresetFilename, getAllPresetSizes } from './exportPresets';
