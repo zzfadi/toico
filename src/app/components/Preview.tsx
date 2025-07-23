@@ -2,25 +2,41 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { convertImageToIco, downloadIcoFile } from '../utils/imageToIco';
+import { convertImageToSvg, generateSvgPreview, convertImageToIndividualSvgs, downloadIndividualSvgFiles, SVG_SIZES } from '../utils/imageToSvg';
 import { loadImageToCanvas, loadSvgToCanvas, resizeImageWithHighQuality } from '../utils/canvasHelpers';
 import { detectImageFormat } from '../utils/imageFormats';
+import SegmentedControl from './SegmentedControl';
+
+export type OutputFormat = 'ico' | 'svg';
 
 interface PreviewProps {
   imageFile: File | null;
   imageDataUrl: string | null;
   imageMetadata: { format: string; dimensions?: { width: number; height: number } } | null;
-  onConversionComplete: (icoUrl: string) => void;
-  icoDataUrl: string | null;
+  onConversionComplete: (url: string, format: OutputFormat) => void;
+  convertedUrl: string | null;
+  outputFormat?: OutputFormat;
 }
 
-const PREVIEW_SIZES = [256, 128, 64, 48, 32, 16] as const;
+const ICO_SIZES = [256, 128, 64, 48, 32, 16] as const;
+const SVG_DISPLAY_SIZES = SVG_SIZES.slice().reverse(); // Use imported sizes, reversed for better display
 
-export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConversionComplete, icoDataUrl }: PreviewProps) {
+export default function Preview({ 
+  imageFile, 
+  imageDataUrl, 
+  imageMetadata, 
+  onConversionComplete, 
+  convertedUrl,
+  outputFormat = 'ico'
+}: PreviewProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [previewImages, setPreviewImages] = useState<Record<number, string>>({});
+  const [svgPreview, setSvgPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasConverted, setHasConverted] = useState(false);
+  const [currentFormat, setCurrentFormat] = useState<OutputFormat>(outputFormat);
   const [selectedSizes, setSelectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
+  const [svgSelectedSizes, setSvgSelectedSizes] = useState<Set<number>>(new Set([128, 64, 32]));
 
   useEffect(() => {
     if (!imageFile || !imageDataUrl) {
@@ -30,8 +46,8 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
       return;
     }
     
-    // Don't re-convert if we already have a successful conversion
-    if (hasConverted && icoDataUrl) {
+    // Don't re-convert if we already have a successful conversion for the current format
+    if (hasConverted && convertedUrl) {
       return;
     }
 
@@ -46,13 +62,14 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
         }
 
         const previews: Record<number, string> = {};
+        const currentSizes = currentFormat === 'ico' ? ICO_SIZES : SVG_DISPLAY_SIZES;
         
         if (formatDetection.formatKey === 'svg') {
           // Handle SVG files
           const svgContent = atob(imageDataUrl.split(',')[1]);
           
           // Generate preview images for each size with timeout
-          const previewPromises = PREVIEW_SIZES.map(async (size) => {
+          const previewPromises = currentSizes.map(async (size) => {
             try {
               const canvas = await Promise.race([
                 loadSvgToCanvas(svgContent, size),
@@ -73,7 +90,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
           const sourceCanvas = await loadImageToCanvas(imageFile);
           
           // Generate preview images for each size
-          const previewPromises = PREVIEW_SIZES.map(async (size) => {
+          const previewPromises = currentSizes.map(async (size) => {
             try {
               let canvas: HTMLCanvasElement;
               if (sourceCanvas.width === size && sourceCanvas.height === size) {
@@ -93,27 +110,47 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
         
         setPreviewImages(previews);
         
-        // Convert to ICO with timeout using selected sizes
+        // Generate SVG preview if needed
+        if (currentFormat === 'svg') {
+          try {
+            const svgPreviewContent = await generateSvgPreview(imageFile, 192);
+            setSvgPreview(svgPreviewContent);
+          } catch (svgPreviewError) {
+            console.warn('SVG preview generation failed:', svgPreviewError);
+          }
+        }
+        
+        // Convert to selected format with timeout
         try {
-          const icoUrl = await Promise.race([
-            convertImageToIco(imageFile, Array.from(selectedSizes)),
+          const activeSelectedSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+          
+          const conversionPromise = currentFormat === 'ico'
+            ? convertImageToIco(imageFile, Array.from(activeSelectedSizes))
+            : convertImageToSvg(imageFile, Array.from(activeSelectedSizes), {
+                embedHighQuality: true,
+                includeMetadata: true,
+                optimizeForWeb: true
+              });
+          
+          const convertedUrl = await Promise.race([
+            conversionPromise,
             new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Conversion timeout after 15 seconds')), 15000)
+              setTimeout(() => reject(new Error(`${currentFormat.toUpperCase()} conversion timeout after 15 seconds`)), 15000)
             )
           ]);
           
-          onConversionComplete(icoUrl);
+          onConversionComplete(convertedUrl, currentFormat);
           setHasConverted(true);
         } catch (conversionError) {
-          console.error('ICO conversion failed:', conversionError);
-          throw new Error('Failed to convert to ICO format');
+          console.error(`${currentFormat.toUpperCase()} conversion failed:`, conversionError);
+          throw new Error(`Failed to convert to ${currentFormat.toUpperCase()} format`);
         }
         
       } catch (err) {
         console.error('Conversion error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to convert image';
         setError(`Conversion failed: ${errorMessage}. Please try a different file.`);
-        onConversionComplete(''); // Clear any previous conversion
+        onConversionComplete('', currentFormat); // Clear any previous conversion
         setHasConverted(false);
       } finally {
         setIsConverting(false);
@@ -121,24 +158,76 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
     };
 
     generatePreviews();
-  }, [imageFile, imageDataUrl, selectedSizes, hasConverted, icoDataUrl, onConversionComplete]); // Re-run when sizes change
+  }, [imageFile, imageDataUrl, selectedSizes, svgSelectedSizes, currentFormat, hasConverted, convertedUrl, onConversionComplete]); // Re-run when sizes or format change
 
-  const handleDownload = useCallback(() => {
-    if (icoDataUrl) {
-      downloadIcoFile(icoDataUrl);
+  // Handle format change
+  const handleFormatChange = useCallback((newFormat: string) => {
+    const format = newFormat as OutputFormat;
+    setCurrentFormat(format);
+    setHasConverted(false); // Reset conversion state
+    setError(null);
+    setSvgPreview(null);
+  }, []);
+
+  const handleDownload = useCallback(async () => {
+    if (!imageFile) return;
+
+    if (currentFormat === 'ico') {
+      if (convertedUrl) {
+        downloadIcoFile(convertedUrl);
+      }
+    } else {
+      // For SVG, generate individual files for each selected size
+      try {
+        const selectedSizesArray = Array.from(svgSelectedSizes);
+        const svgFiles = await convertImageToIndividualSvgs(imageFile, selectedSizesArray, {
+          embedHighQuality: true,
+          includeMetadata: true,
+          optimizeForWeb: true
+        });
+        
+        downloadIndividualSvgFiles(svgFiles);
+      } catch (error) {
+        console.error('SVG download failed:', error);
+        setError('Failed to download SVG files. Please try again.');
+      }
     }
-  }, [icoDataUrl]);
+  }, [convertedUrl, currentFormat, imageFile, svgSelectedSizes]);
 
   if (!imageFile || !imageDataUrl) {
     return (
       <div className="space-y-6">
-        {/* Preview Section Title */}
-        <div className="text-center">
+        {/* Preview Section Title with Format Toggle */}
+        <div className="text-center space-y-4">
           <h2 className="text-2xl font-serif font-bold mb-2 text-glow" style={{color: '#36454F'}}>
-            ICO Preview
+            {currentFormat === 'ico' ? 'ICO Preview' : 'SVG Preview'}
           </h2>
+          
+          <SegmentedControl
+            options={[
+              {
+                value: 'ico',
+                label: 'ICO Format',
+                icon: '🎯',
+                description: 'Multi-size favicon format for browsers and applications'
+              },
+              {
+                value: 'svg',
+                label: 'SVG Format', 
+                icon: '📐',
+                description: 'Scalable vector graphics for modern web applications'
+              }
+            ]}
+            value={currentFormat}
+            onChange={handleFormatChange}
+            className="max-w-md mx-auto"
+          />
+          
           <p className="text-sm opacity-75" style={{color: '#36454F'}}>
-            Your converted icons will appear here
+            {currentFormat === 'ico' 
+              ? 'Your favicon icons will appear here'
+              : 'Your scalable vector graphics will appear here'
+            }
           </p>
         </div>
 
@@ -178,13 +267,37 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
 
   return (
     <div className="space-y-6">
-      {/* Preview Section Title */}
-      <div className="text-center">
+      {/* Preview Section Title with Format Toggle */}
+      <div className="text-center space-y-4">
         <h2 className="text-2xl font-serif font-bold mb-2 text-glow" style={{color: '#36454F'}}>
-          ICO Preview
+          {currentFormat === 'ico' ? 'ICO Preview' : 'SVG Preview'}
         </h2>
+        
+        <SegmentedControl
+          options={[
+            {
+              value: 'ico',
+              label: 'ICO Format',
+              icon: '🎯',
+              description: 'Multi-size favicon format for browsers and applications'
+            },
+            {
+              value: 'svg',
+              label: 'SVG Format', 
+              icon: '📐',
+              description: 'Scalable vector graphics for modern web applications'
+            }
+          ]}
+          value={currentFormat}
+          onChange={handleFormatChange}
+          className="max-w-md mx-auto"
+        />
+        
         <p className="text-sm opacity-75" style={{color: '#36454F'}}>
-          Select sizes and preview your converted icons
+          {currentFormat === 'ico' 
+            ? 'Select sizes and preview your favicon icons'
+            : 'Select sizes and preview your scalable graphics'
+          }
         </p>
       </div>
 
@@ -196,7 +309,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
           <div className="flex items-center gap-3 mb-3">
             <div className="w-3 h-3 rounded-full bg-gradient-to-r from-classic-blue to-golden-terra pulse-glow"></div>
             <h3 className="text-lg font-serif font-bold text-glow" style={{color: '#36454F'}}>
-              Conversion Preview
+              {currentFormat === 'ico' ? 'ICO Conversion' : 'SVG Conversion'}
             </h3>
           </div>
           
@@ -213,7 +326,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
             <div className="flex items-center gap-2">
               <div className="animate-spin w-4 h-4 border-2 border-mocha-mousse/30 border-t-mocha-mousse rounded-full"></div>
               <p className="text-sm font-medium" style={{color: '#A47764'}}>
-                Converting your image to ICO format...
+                Converting your image to {currentFormat.toUpperCase()} format...
               </p>
             </div>
           )}
@@ -230,12 +343,34 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
               <p className="text-sm font-medium" style={{color: '#DC2626'}}>{error}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {PREVIEW_SIZES.map((size) => (
+            <div className="space-y-6">
+              {/* SVG Preview Display */}
+              {currentFormat === 'svg' && svgPreview && (
+                <div className="glass-card rounded-xl p-6 text-center">
+                  <h4 className="text-sm font-serif font-bold mb-4 text-glow" style={{color: '#36454F'}}>
+                    SVG Preview (Interactive)
+                  </h4>
+                  <div 
+                    className="flex items-center justify-center p-4 rounded-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))',
+                      minHeight: '200px'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: svgPreview }}
+                  />
+                  <p className="text-xs opacity-70 mt-2" style={{color: '#36454F'}}>
+                    SVG graphics scale perfectly at any size
+                  </p>
+                </div>
+              )}
+              
+              {/* Size Selection Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {(currentFormat === 'ico' ? ICO_SIZES : SVG_DISPLAY_SIZES).map((size) => (
                 <div
                   key={size}
                   className={`text-center p-4 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105 ${
-                    selectedSizes.has(size)
+                    (currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size)
                       ? 'glass-card border-2 border-mocha-mousse/50 pulse-glow'
                       : 'premium-gradient border border-white/20 hover:glass-card'
                   }`}
@@ -244,20 +379,23 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
                     <input
                       type="checkbox"
                       id={`size-${size}`}
-                      checked={selectedSizes.has(size)}
+                      checked={(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size)}
                       onChange={(e) => {
-                        const newSizes = new Set(selectedSizes);
+                        const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+                        const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
+                        
+                        const newSizes = new Set(currentSizes);
                         if (e.target.checked) {
                           newSizes.add(size);
                         } else if (newSizes.size > 1) { // Ensure at least one size is selected
                           newSizes.delete(size);
                         }
-                        setSelectedSizes(newSizes);
+                        setSizes(newSizes);
                         setHasConverted(false); // Reset conversion state when sizes change
                       }}
                       className="w-5 h-5 rounded border-2 border-mocha-mousse/30 text-mocha-mousse focus:ring-2 focus:ring-golden-terra/50 transition-all duration-200"
                       style={{
-                        backgroundColor: selectedSizes.has(size) ? '#A47764' : 'transparent',
+                        backgroundColor: (currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size) ? '#A47764' : 'transparent',
                         accentColor: '#A47764'
                       }}
                     />
@@ -277,10 +415,10 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
                             width: Math.min(size, 48),
                             height: Math.min(size, 48),
                             imageRendering: size <= 32 ? 'pixelated' : 'auto',
-                            filter: selectedSizes.has(size) ? 'none' : 'grayscale(0.5) opacity(0.7)'
+                            filter: (currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size) ? 'none' : 'grayscale(0.5) opacity(0.7)'
                           }}
                         />
-                        {selectedSizes.has(size) && (
+                        {(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size) && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-classic-blue to-golden-terra rounded-full flex items-center justify-center">
                             <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -296,16 +434,20 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
                   </div>
                   
                   <p className="text-xs font-medium opacity-70" style={{color: '#36454F'}}>
-                    {size <= 32 ? 'Small Icon' : size <= 64 ? 'Medium Icon' : 'Large Icon'}
+                    {currentFormat === 'ico'
+                      ? (size <= 32 ? 'Small Icon' : size <= 64 ? 'Medium Icon' : 'Large Icon')
+                      : (size <= 48 ? 'UI Icon' : size <= 192 ? 'Web Icon' : 'Display Icon')
+                    }
                   </p>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {icoDataUrl && !error && (
+      {convertedUrl && !error && (
         <div className="space-y-4">
           <div className="text-center glass-card rounded-2xl p-6">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -319,7 +461,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
               </h3>
             </div>
             <p className="text-sm opacity-80 mb-6" style={{color: '#36454F'}}>
-              Your ICO file is ready with {selectedSizes.size} size{selectedSizes.size === 1 ? '' : 's'}: {Array.from(selectedSizes).sort((a, b) => b - a).join(', ')}px
+              Your {currentFormat.toUpperCase()} {currentFormat === 'ico' ? 'file is' : 'files are'} ready with {(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).size} size{(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).size === 1 ? '' : 's'}: {Array.from(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).sort((a, b) => b - a).join(', ')}px
             </p>
             
             <button
@@ -337,7 +479,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                  Download ICO File
+                  Download {currentFormat.toUpperCase()} {currentFormat === 'ico' ? 'File' : 'Files'}
                 </div>
               )}
             </button>

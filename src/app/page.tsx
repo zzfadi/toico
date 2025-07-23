@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import FileUploader from './components/FileUploader';
-import Preview from './components/Preview';
+import Preview, { OutputFormat } from './components/Preview';
 import FormatSupport from './components/FormatSupport';
 
 export default function Home() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [imageMetadata, setImageMetadata] = useState<{ format: string; dimensions?: { width: number; height: number } } | null>(null);
-  const [icoDataUrl, setIcoDataUrl] = useState<string | null>(null);
+  const [convertedUrl, setConvertedUrl] = useState<string | null>(null);
+  const [currentFormat, setCurrentFormat] = useState<OutputFormat>('ico');
   const [error, setError] = useState<string | null>(null);
 
   return (
@@ -36,13 +37,13 @@ export default function Home() {
             Premium Image to
             <br />
             <span className="bg-gradient-to-r from-mocha-mousse via-golden-terra to-mocha-mousse bg-clip-text text-transparent">
-              ICO Converter
+              ICO & SVG Converter
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 leading-relaxed" style={{color: '#36454F', opacity: 0.85}}>
-            Transform your images into professional ICO files with our 
+            Transform your images into professional ICO favicons or scalable SVG graphics with our 
             <span className="font-semibold text-classic-blue"> privacy-first converter</span>. 
             All processing happens locally on your device - your images never leave your browser.
           </p>
@@ -59,7 +60,7 @@ export default function Home() {
               <svg className="w-5 h-5" style={{color: '#A47764'}} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span className="text-sm font-medium" style={{color: '#36454F'}}>6 Formats</span>
+              <span className="text-sm font-medium" style={{color: '#36454F'}}>ICO & SVG</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full">
               <svg className="w-5 h-5" style={{color: '#B8956A'}} fill="currentColor" viewBox="0 0 20 20">
@@ -89,14 +90,14 @@ export default function Home() {
                   setImageDataUrl(dataUrl);
                   setImageMetadata(metadata || null);
                   setError(null);
-                  setIcoDataUrl(null);
+                  setConvertedUrl(null);
                 }}
                 onError={(errorMessage) => {
                   setError(errorMessage);
                   setImageFile(null);
                   setImageDataUrl(null);
                   setImageMetadata(null);
-                  setIcoDataUrl(null);
+                  setConvertedUrl(null);
                 }}
                 error={error}
               />
@@ -110,8 +111,12 @@ export default function Home() {
                 imageFile={imageFile}
                 imageDataUrl={imageDataUrl}
                 imageMetadata={imageMetadata}
-                onConversionComplete={(icoUrl: string) => setIcoDataUrl(icoUrl)}
-                icoDataUrl={icoDataUrl}
+                onConversionComplete={(url: string, format: OutputFormat) => {
+                  setConvertedUrl(url);
+                  setCurrentFormat(format);
+                }}
+                convertedUrl={convertedUrl}
+                outputFormat={currentFormat}
               />
             </div>
           </div>
