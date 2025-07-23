@@ -35,14 +35,44 @@ export class BatchWorkerManager {
     if (typeof window === 'undefined') return; // SSR safety
     
     try {
-      this.worker = new Worker('/batch-worker.js');
-      this.worker.onmessage = this.handleMessage.bind(this);
-      this.worker.onerror = (_error) => {
-        console.error('Worker error:', _error);
-        this.callbacks.onError?.('Worker error occurred');
+      // Try multiple worker paths for different deployment environments
+      const workerPaths = [
+        '/batch-worker.js',          // Standard public path
+        './batch-worker.js',         // Relative path
+        `${window.location.origin}/batch-worker.js`, // Absolute URL
+        new URL('/batch-worker.js', window.location.origin).href // Explicit URL construction
+      ];
+
+      let workerCreated = false;
+      
+      for (const workerPath of workerPaths) {
+        try {
+          this.worker = new Worker(workerPath);
+          workerCreated = true;
+          break;
+        } catch (pathError) {
+          console.warn(`Failed to load worker from ${workerPath}:`, pathError);
+          continue;
+        }
+      }
+
+      if (!workerCreated) {
+        throw new Error('Unable to load Web Worker from any known path');
+      }
+
+      this.worker!.onmessage = this.handleMessage.bind(this);
+      this.worker!.onerror = (error) => {
+        console.error('Worker runtime error:', error);
+        this.callbacks.onError?.(`Web Worker error: ${error.message || 'Unknown worker error'}. Batch processing may be slower.`);
       };
+
+      // Test worker communication
+      this.worker!.postMessage({ type: 'HEALTH_CHECK' });
+      
     } catch (error) {
-      console.warn('Web Worker not supported, falling back to main thread');
+      console.warn('Web Worker initialization failed:', error);
+      this.callbacks.onError?.('Web Worker not available in this environment. Batch processing will use main thread and may be slower.');
+      this.worker = null;
     }
   }
 

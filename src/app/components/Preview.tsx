@@ -38,6 +38,25 @@ export default function Preview({
   const [selectedSizes, setSelectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
   const [svgSelectedSizes, setSvgSelectedSizes] = useState<Set<number>>(new Set([128, 64, 32]));
 
+  // Helper functions for format-specific size selection logic
+  const getCurrentSelectedSizes = useCallback(() => {
+    return currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+  }, [currentFormat, selectedSizes, svgSelectedSizes]);
+
+  const getCurrentSizeSetter = useCallback(() => {
+    return currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
+  }, [currentFormat]);
+
+  const isCurrentSizeSelected = useCallback((size: number) => {
+    return getCurrentSelectedSizes().has(size);
+  }, [getCurrentSelectedSizes]);
+
+  const updateSelectedSizes = useCallback((updater: (sizes: Set<number>) => Set<number>) => {
+    const currentSizes = getCurrentSelectedSizes();
+    const setSizes = getCurrentSizeSetter();
+    setSizes(updater(currentSizes));
+  }, [getCurrentSelectedSizes, getCurrentSizeSetter]);
+
   useEffect(() => {
     if (!imageFile || !imageDataUrl) {
       setPreviewImages({});
@@ -122,7 +141,7 @@ export default function Preview({
         
         // Convert to selected format with timeout
         try {
-          const activeSelectedSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+          const activeSelectedSizes = getCurrentSelectedSizes();
           
           const conversionPromise = currentFormat === 'ico'
             ? convertImageToIco(imageFile, Array.from(activeSelectedSizes))
@@ -158,7 +177,7 @@ export default function Preview({
     };
 
     generatePreviews();
-  }, [imageFile, imageDataUrl, selectedSizes, svgSelectedSizes, currentFormat, hasConverted, convertedUrl, onConversionComplete]); // Re-run when sizes or format change
+  }, [imageFile, imageDataUrl, selectedSizes, svgSelectedSizes, currentFormat, hasConverted, convertedUrl, onConversionComplete, getCurrentSelectedSizes]); // Re-run when sizes or format change
 
   // Handle format change
   const handleFormatChange = useCallback((newFormat: string) => {
@@ -371,7 +390,7 @@ export default function Preview({
                 <div
                   key={size}
                   className={`text-center p-4 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105 ${
-                    (currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size)
+                    isCurrentSizeSelected(size)
                       ? 'glass-card border-2 border-mocha-mousse/50 pulse-glow'
                       : 'premium-gradient border border-white/20 hover:glass-card'
                   }`}
@@ -380,23 +399,22 @@ export default function Preview({
                     <input
                       type="checkbox"
                       id={`size-${size}`}
-                      checked={(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size)}
+                      checked={isCurrentSizeSelected(size)}
                       onChange={(e) => {
-                        const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
-                        const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
-                        
-                        const newSizes = new Set(currentSizes);
-                        if (e.target.checked) {
-                          newSizes.add(size);
-                        } else if (newSizes.size > 1) { // Ensure at least one size is selected
-                          newSizes.delete(size);
-                        }
-                        setSizes(newSizes);
+                        updateSelectedSizes((currentSizes) => {
+                          const newSizes = new Set(currentSizes);
+                          if (e.target.checked) {
+                            newSizes.add(size);
+                          } else if (newSizes.size > 1) { // Ensure at least one size is selected
+                            newSizes.delete(size);
+                          }
+                          return newSizes;
+                        });
                         setHasConverted(false); // Reset conversion state when sizes change
                       }}
                       className="w-5 h-5 rounded border-2 border-mocha-mousse/30 text-mocha-mousse focus:ring-2 focus:ring-golden-terra/50 transition-all duration-200"
                       style={{
-                        backgroundColor: (currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size) ? '#A47764' : 'transparent',
+                        backgroundColor: isCurrentSizeSelected(size) ? '#A47764' : 'transparent',
                         accentColor: '#A47764'
                       }}
                     />
@@ -416,10 +434,10 @@ export default function Preview({
                             width: Math.min(size, 48),
                             height: Math.min(size, 48),
                             imageRendering: size <= 32 ? 'pixelated' : 'auto',
-                            filter: (currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size) ? 'none' : 'grayscale(0.5) opacity(0.7)'
+                            filter: isCurrentSizeSelected(size) ? 'none' : 'grayscale(0.5) opacity(0.7)'
                           }}
                         />
-                        {(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).has(size) && (
+                        {isCurrentSizeSelected(size) && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-classic-blue to-golden-terra rounded-full flex items-center justify-center">
                             <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -444,7 +462,7 @@ export default function Preview({
                 ))}
                 
                 {/* Custom sizes */}
-                {Array.from(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes)
+                {Array.from(getCurrentSelectedSizes())
                   .filter(size => {
                     const standardSizes = currentFormat === 'ico' ? ICO_SIZES : SVG_DISPLAY_SIZES;
                     return !standardSizes.some(standardSize => standardSize === size);
@@ -462,15 +480,15 @@ export default function Preview({
                       checked={true}
                       onChange={(e) => {
                         if (!e.target.checked) {
-                          const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
-                          const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
-                          
-                          const newSizes = new Set(currentSizes);
-                          if (newSizes.size > 1) { // Ensure at least one size is selected
-                            newSizes.delete(size);
-                            setSizes(newSizes);
-                            setHasConverted(false);
-                          }
+                          updateSelectedSizes((currentSizes) => {
+                            const newSizes = new Set(currentSizes);
+                            if (newSizes.size > 1) { // Ensure at least one size is selected
+                              newSizes.delete(size);
+                              setHasConverted(false);
+                              return newSizes;
+                            }
+                            return currentSizes;
+                          });
                         }
                       }}
                       className="w-5 h-5 rounded border-2 border-golden-terra/30 text-golden-terra focus:ring-2 focus:ring-golden-terra/50 transition-all duration-200"
@@ -538,14 +556,13 @@ export default function Preview({
                         const input = e.target as HTMLInputElement;
                         const customSize = parseInt(input.value);
                         if (customSize >= 1 && customSize <= 2048) {
-                          const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
-                          const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
-                          
-                          const newSizes = new Set(currentSizes);
-                          newSizes.add(customSize);
-                          setSizes(newSizes);
-                          setHasConverted(false);
-                          input.value = '';
+                          updateSelectedSizes((currentSizes) => {
+                            const newSizes = new Set(currentSizes);
+                            newSizes.add(customSize);
+                            setHasConverted(false);
+                            input.value = '';
+                            return newSizes;
+                          });
                         }
                       }
                     }}
@@ -555,14 +572,13 @@ export default function Preview({
                       const input = (e.target as HTMLButtonElement).previousElementSibling as HTMLInputElement;
                       const customSize = parseInt(input.value);
                       if (customSize >= 1 && customSize <= 2048) {
-                        const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
-                        const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
-                        
-                        const newSizes = new Set(currentSizes);
-                        newSizes.add(customSize);
-                        setSizes(newSizes);
-                        setHasConverted(false);
-                        input.value = '';
+                        updateSelectedSizes((currentSizes) => {
+                          const newSizes = new Set(currentSizes);
+                          newSizes.add(customSize);
+                          setHasConverted(false);
+                          input.value = '';
+                          return newSizes;
+                        });
                       }
                     }}
                     className="px-4 py-2 glass-button text-white text-sm rounded-lg hover:scale-105 transition-all duration-200"
@@ -593,7 +609,7 @@ export default function Preview({
               </h3>
             </div>
             <p className="text-sm opacity-80 mb-6" style={{color: '#36454F'}}>
-              Your {currentFormat.toUpperCase()} {currentFormat === 'ico' ? 'file is' : 'files are'} ready with {(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).size} size{(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).size === 1 ? '' : 's'}: {Array.from(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes).sort((a, b) => b - a).join(', ')}px
+              Your {currentFormat.toUpperCase()} {currentFormat === 'ico' ? 'file is' : 'files are'} ready with {getCurrentSelectedSizes().size} size{getCurrentSelectedSizes().size === 1 ? '' : 's'}: {Array.from(getCurrentSelectedSizes()).sort((a, b) => b - a).join(', ')}px
             </p>
             
             <button
