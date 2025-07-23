@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import FileUploader from './components/FileUploader';
+import BatchFileUploader, { BatchFileInfo } from './components/BatchFileUploader';
 import Preview, { OutputFormat } from './components/Preview';
 import FormatSupport from './components/FormatSupport';
+import SegmentedControl from './components/SegmentedControl';
 
 export default function Home() {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -12,6 +14,10 @@ export default function Home() {
   const [convertedUrl, setConvertedUrl] = useState<string | null>(null);
   const [currentFormat, setCurrentFormat] = useState<OutputFormat>('ico');
   const [error, setError] = useState<string | null>(null);
+  const [processingMode, setProcessingMode] = useState<'single' | 'batch'>('single');
+  const [, setBatchResults] = useState<BatchFileInfo[]>([]);
+  const [selectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
+  const [svgSelectedSizes] = useState<Set<number>>(new Set([128, 64, 32]));
 
   return (
     <div className="min-h-screen relative">
@@ -40,6 +46,29 @@ export default function Home() {
               ICO & SVG Converter
             </span>
           </h1>
+          
+          {/* Processing Mode Toggle */}
+          <div className="mb-8">
+            <SegmentedControl
+              options={[
+                {
+                  value: 'single',
+                  label: 'Single File',
+                  icon: '📄',
+                  description: 'Convert one image at a time with detailed preview'
+                },
+                {
+                  value: 'batch',
+                  label: 'Batch Processing',
+                  icon: '🔥',
+                  description: 'Convert multiple images simultaneously with ZIP download'
+                }
+              ]}
+              value={processingMode}
+              onChange={(mode) => setProcessingMode(mode as 'single' | 'batch')}
+              className="max-w-md mx-auto"
+            />
+          </div>
 
           {/* Subtitle */}
           <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 leading-relaxed" style={{color: '#36454F', opacity: 0.85}}>
@@ -81,45 +110,66 @@ export default function Home() {
       {/* Main Content */}
       <main className="container mx-auto px-4 pb-16">
         <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 max-w-7xl mx-auto">
-          {/* Left Column - File Uploader */}
-          <div className="space-y-8">
-            <div className="glass-card rounded-3xl p-8 md:p-10">
-              <FileUploader
-                onFileSelect={(file, dataUrl, metadata) => {
-                  setImageFile(file);
-                  setImageDataUrl(dataUrl);
-                  setImageMetadata(metadata || null);
-                  setError(null);
-                  setConvertedUrl(null);
-                }}
-                onError={(errorMessage) => {
-                  setError(errorMessage);
-                  setImageFile(null);
-                  setImageDataUrl(null);
-                  setImageMetadata(null);
-                  setConvertedUrl(null);
-                }}
-                error={error}
-              />
-            </div>
-          </div>
+          {processingMode === 'single' ? (
+            <>
+              {/* Left Column - Single File Uploader */}
+              <div className="space-y-8">
+                <div className="glass-card rounded-3xl p-8 md:p-10">
+                  <FileUploader
+                    onFileSelect={(file, dataUrl, metadata) => {
+                      setImageFile(file);
+                      setImageDataUrl(dataUrl);
+                      setImageMetadata(metadata || null);
+                      setError(null);
+                      setConvertedUrl(null);
+                    }}
+                    onError={(errorMessage) => {
+                      setError(errorMessage);
+                      setImageFile(null);
+                      setImageDataUrl(null);
+                      setImageMetadata(null);
+                      setConvertedUrl(null);
+                    }}
+                    error={error}
+                  />
+                </div>
+              </div>
 
-          {/* Right Column - Preview */}
-          <div className="space-y-8">
-            <div className="glass-card rounded-3xl p-8 md:p-10">
-              <Preview
-                imageFile={imageFile}
-                imageDataUrl={imageDataUrl}
-                imageMetadata={imageMetadata}
-                onConversionComplete={(url: string, format: OutputFormat) => {
-                  setConvertedUrl(url);
-                  setCurrentFormat(format);
-                }}
-                convertedUrl={convertedUrl}
-                outputFormat={currentFormat}
-              />
-            </div>
-          </div>
+              {/* Right Column - Single File Preview */}
+              <div className="space-y-8">
+                <div className="glass-card rounded-3xl p-8 md:p-10">
+                  <Preview
+                    imageFile={imageFile}
+                    imageDataUrl={imageDataUrl}
+                    imageMetadata={imageMetadata}
+                    onConversionComplete={(url: string, format: OutputFormat) => {
+                      setConvertedUrl(url);
+                      setCurrentFormat(format);
+                    }}
+                    convertedUrl={convertedUrl}
+                    outputFormat={currentFormat}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Full Width - Batch Processing */}
+              <div className="lg:col-span-2 space-y-8">
+                <div className="glass-card rounded-3xl p-8 md:p-10">
+                  <BatchFileUploader
+                    onBatchComplete={(results) => {
+                      setBatchResults(results);
+                      console.log('Batch processing completed:', results.length, 'files');
+                    }}
+                    outputFormat={currentFormat}
+                    selectedSizes={Array.from(selectedSizes)}
+                    svgSelectedSizes={Array.from(svgSelectedSizes)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </main>
 
