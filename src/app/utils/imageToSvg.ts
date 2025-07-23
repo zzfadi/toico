@@ -125,7 +125,12 @@ async function processRasterToSvg(
   sizes: number[], 
   options: SvgConversionOptions
 ): Promise<Array<{ size: number; element: string; viewBox: string }>> {
-  const sourceCanvas = await loadImageToCanvas(file);
+  const sourceCanvas = await Promise.race([
+    loadImageToCanvas(file),
+    new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Image loading timeout')), 10000)
+    )
+  ]);
   const elements: Array<{ size: number; element: string; viewBox: string }> = [];
   
   const formatDetection = detectImageFormat(file);
@@ -362,7 +367,12 @@ export async function convertImageToIndividualSvgs(
         svgContent = new XMLSerializer().serializeToString(svgElement);
       } else {
         // For raster images, create embedded SVG
-        const canvas = await loadImageToCanvas(file);
+        const canvas = await Promise.race([
+          loadImageToCanvas(file),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Image loading timeout')), 10000)
+          )
+        ]);
         const resized = resizeImageWithHighQuality(canvas, size, size);
         
         // Add white background if needed
@@ -469,7 +479,12 @@ export async function generateSvgPreview(
       }
     } else {
       // For raster, create simple embedded SVG
-      const canvas = await loadImageToCanvas(file);
+      const canvas = await Promise.race([
+        loadImageToCanvas(file),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Image loading timeout')), 10000)
+        )
+      ]);
       const resized = resizeImageWithHighQuality(canvas, previewSize, previewSize);
       const dataUrl = resized.toDataURL('image/png', 0.9);
       

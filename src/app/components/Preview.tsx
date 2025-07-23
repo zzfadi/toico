@@ -366,6 +366,7 @@ export default function Preview({
               
               {/* Size Selection Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {/* Standard sizes */}
                 {(currentFormat === 'ico' ? ICO_SIZES : SVG_DISPLAY_SIZES).map((size) => (
                 <div
                   key={size}
@@ -441,6 +442,137 @@ export default function Preview({
                   </p>
                 </div>
                 ))}
+                
+                {/* Custom sizes */}
+                {Array.from(currentFormat === 'ico' ? selectedSizes : svgSelectedSizes)
+                  .filter(size => {
+                    const standardSizes = currentFormat === 'ico' ? ICO_SIZES : SVG_DISPLAY_SIZES;
+                    return !standardSizes.some(standardSize => standardSize === size);
+                  })
+                  .sort((a, b) => a - b)
+                  .map((size) => (
+                <div
+                  key={`custom-${size}`}
+                  className="text-center p-4 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105 glass-card border-2 border-golden-terra/50 pulse-glow relative"
+                >
+                  <div className="flex items-center justify-center mb-3">
+                    <input
+                      type="checkbox"
+                      id={`custom-size-${size}`}
+                      checked={true}
+                      onChange={(e) => {
+                        if (!e.target.checked) {
+                          const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+                          const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
+                          
+                          const newSizes = new Set(currentSizes);
+                          if (newSizes.size > 1) { // Ensure at least one size is selected
+                            newSizes.delete(size);
+                            setSizes(newSizes);
+                            setHasConverted(false);
+                          }
+                        }
+                      }}
+                      className="w-5 h-5 rounded border-2 border-golden-terra/30 text-golden-terra focus:ring-2 focus:ring-golden-terra/50 transition-all duration-200"
+                      style={{
+                        backgroundColor: '#B8956A',
+                        accentColor: '#B8956A'
+                      }}
+                    />
+                    <label htmlFor={`custom-size-${size}`} className="ml-3 text-sm font-semibold cursor-pointer" style={{color: '#36454F'}}>
+                      {size} × {size}px
+                    </label>
+                    <span className="ml-2 px-2 py-1 text-xs rounded-full bg-gradient-to-r from-golden-terra to-mocha-mousse text-white">
+                      Custom
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-center mb-3 h-16">
+                    {previewImages[size] ? (
+                      <div className="relative">
+                        <img
+                          src={previewImages[size]}
+                          alt={`${size}x${size} preview`}
+                          className="max-w-full max-h-full rounded-lg shadow-lg"
+                          style={{
+                            width: Math.min(size, 48),
+                            height: Math.min(size, 48),
+                            imageRendering: size <= 32 ? 'pixelated' : 'auto'
+                          }}
+                        />
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-golden-terra to-mocha-mousse rounded-full flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg animate-pulse" style={{
+                        background: 'linear-gradient(135deg, rgba(184, 149, 106, 0.2), rgba(164, 119, 100, 0.1))'
+                      }} />
+                    )}
+                  </div>
+                  
+                  <p className="text-xs font-medium opacity-70" style={{color: '#36454F'}}>
+                    Custom Size
+                  </p>
+                </div>
+                ))}
+              </div>
+              
+              {/* Custom Size Input */}
+              <div className="glass-card rounded-xl p-4 mt-6">
+                <h4 className="text-sm font-serif font-bold mb-3 text-glow" style={{color: '#36454F'}}>
+                  ✨ Add Custom Size
+                </h4>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    max="2048"
+                    placeholder="Enter size (1-2048px)"
+                    className="flex-1 px-4 py-2 rounded-lg border border-white/20 bg-white/10 backdrop-filter backdrop-blur-sm text-sm"
+                    style={{color: '#36454F'}}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement;
+                        const customSize = parseInt(input.value);
+                        if (customSize >= 1 && customSize <= 2048) {
+                          const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+                          const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
+                          
+                          const newSizes = new Set(currentSizes);
+                          newSizes.add(customSize);
+                          setSizes(newSizes);
+                          setHasConverted(false);
+                          input.value = '';
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      const input = (e.target as HTMLButtonElement).previousElementSibling as HTMLInputElement;
+                      const customSize = parseInt(input.value);
+                      if (customSize >= 1 && customSize <= 2048) {
+                        const currentSizes = currentFormat === 'ico' ? selectedSizes : svgSelectedSizes;
+                        const setSizes = currentFormat === 'ico' ? setSelectedSizes : setSvgSelectedSizes;
+                        
+                        const newSizes = new Set(currentSizes);
+                        newSizes.add(customSize);
+                        setSizes(newSizes);
+                        setHasConverted(false);
+                        input.value = '';
+                      }
+                    }}
+                    className="px-4 py-2 glass-button text-white text-sm rounded-lg hover:scale-105 transition-all duration-200"
+                  >
+                    Add Size
+                  </button>
+                </div>
+                <p className="text-xs opacity-70 mt-2" style={{color: '#36454F'}}>
+                  Enter a custom size between 1-2048 pixels and press Enter or click Add Size
+                </p>
               </div>
             </div>
           )}
