@@ -1,13 +1,25 @@
 {
-  "name": "toico",
-  "version": "0.1.0",
+  "name": "universal-image-to-ico-converter",
+  "version": "2.0.0",
+  "description": "Privacy-first web app that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format entirely in your browser",
   "private": true,
+  "keywords": ["ico", "converter", "image", "favicon", "png", "jpeg", "webp", "gif", "bmp", "svg", "privacy-first", "client-side"],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zzfadi/toico.git"
+  },
+  "homepage": "https://toico.vercel.app",
+  "bugs": {
+    "url": "https://github.com/zzfadi/toico/issues"
+  },
+  "author": "Fadi Al-Zuabi",
+  "license": "MIT",
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
