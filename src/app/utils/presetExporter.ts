@@ -126,19 +126,16 @@ export class PresetExporter {
 
       // Process sizes with controlled concurrency
       const processWithConcurrency = async (tasks: Array<() => Promise<void>>, limit: number) => {
-        const executing: Promise<void>[] = [];
+        const executing = new Set<Promise<void>>();
         
         for (const task of tasks) {
           const promise = task();
-          executing.push(promise);
+          executing.add(promise);
           
-          if (executing.length >= limit) {
+          promise.finally(() => executing.delete(promise));
+          
+          if (executing.size >= limit) {
             await Promise.race(executing);
-            // Remove completed promises
-            const stillExecuting = executing.filter(p => 
-              Promise.race([p.then(() => false), Promise.resolve(true)])
-            );
-            executing.splice(0, executing.length, ...stillExecuting);
           }
         }
         
