@@ -1,0 +1,6 @@
+// Invalid SVG test fixture (malformed)
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+  <rect width="64" height="64" fill="#A47764"
+  <circle cx="32" cy="32" r="16" fill="#F7F5F0"/>
+  <text x="32" y="36" text-anchor="middle">X</text>
+<!-- Missing closing tag -->

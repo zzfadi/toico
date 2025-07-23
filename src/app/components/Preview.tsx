@@ -177,7 +177,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
             </p>
           )}
           {isConverting && (
-            <p className="text-sm text-charcoal-gray/70 mt-1">Converting...</p>
+            <p data-testid="loading-previews" className="text-sm text-charcoal-gray/70 mt-1">Converting...</p>
           )}
         </div>
         
@@ -187,20 +187,22 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
               <p className="text-red-600">{error}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            <div data-testid="preview-container" className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {PREVIEW_SIZES.map((size) => (
                 <div
                   key={size}
+                  data-testid={`preview-${size}`}
                   className={`text-center p-3 md:p-4 rounded-lg border transition-all ${
                     selectedSizes.has(size)
                       ? 'bg-mocha-mousse/10 border-mocha-mousse/40'
-                      : 'bg-champagne-gold/10 border-mocha-mousse/10'
+                      : 'bg-champagne-gold/10 border-mocha-mousse/10 disabled inactive unchecked'
                   }`}
                 >
                   <div className="flex items-center justify-center mb-2">
                     <input
                       type="checkbox"
                       id={`size-${size}`}
+                      data-testid={`size-checkbox-${size}`}
                       checked={selectedSizes.has(size)}
                       onChange={(e) => {
                         const newSizes = new Set(selectedSizes);
@@ -221,6 +223,7 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
                   <div className="flex items-center justify-center mb-2 h-12">
                     {previewImages[size] ? (
                       <img
+                        data-testid="preview-image"
                         src={previewImages[size]}
                         alt={`${size}x${size} preview`}
                         className="max-w-full max-h-full"
@@ -242,20 +245,23 @@ export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConv
       </div>
 
       {icoDataUrl && !error && (
-        <button
-          onClick={handleDownload}
-          disabled={isConverting}
-          className="
-            w-full px-6 py-4 rounded-lg font-semibold text-lg
-            bg-mocha-mousse text-soft-cream
-            hover:bg-golden-terra focus:bg-golden-terra
-            focus:outline-none focus:ring-2 focus:ring-golden-terra focus:ring-offset-2 focus:ring-offset-soft-cream
-            transition-colors duration-200
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-        >
-          {isConverting ? 'Converting...' : `Download .ICO (${selectedSizes.size} ${selectedSizes.size === 1 ? 'size' : 'sizes'})`}
-        </button>
+        <div data-testid="conversion-success">
+          <button
+            data-testid="download-button"
+            onClick={handleDownload}
+            disabled={isConverting}
+            className="
+              w-full px-6 py-4 rounded-lg font-semibold text-lg
+              bg-mocha-mousse text-soft-cream primary prominent success
+              hover:bg-golden-terra focus:bg-golden-terra
+              focus:outline-none focus:ring-2 focus:ring-golden-terra focus:ring-offset-2 focus:ring-offset-soft-cream
+              transition-colors duration-200
+              disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            {isConverting ? 'Converting...' : `Download .ICO (${selectedSizes.size} ${selectedSizes.size === 1 ? 'size' : 'sizes'})`}
+          </button>
+        </div>
       )}
     </div>
   );

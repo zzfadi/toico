@@ -1,0 +1,6 @@
+// Simple SVG test fixture
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#A47764"/>
+  <circle cx="128" cy="128" r="64" fill="#F7F5F0"/>
+  <text x="128" y="138" text-anchor="middle" fill="#36454F" font-family="Arial" font-size="20">ICO</text>
+</svg>

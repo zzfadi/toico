@@ -137,7 +137,8 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
   return (
     <div className="space-y-4">
       <div
-        className="relative border-2 border-dashed rounded-lg p-6 md:p-8 text-center transition-all duration-200"
+        data-testid="file-drop-zone"
+        className={`relative border-2 border-dashed rounded-lg p-6 md:p-8 text-center transition-all duration-200 ${isDragOver ? 'drag-over' : ''}`}
         style={{
           borderColor: isDragOver ? '#B8956A' : '#A47764',
           backgroundColor: isDragOver ? 'rgba(247, 231, 206, 0.2)' : 'rgba(247, 231, 206, 0.1)',
@@ -185,9 +186,9 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
             </p>
             
             {fileInfo && (
-              <div className="mb-4 p-3 rounded-lg" style={{backgroundColor: 'rgba(164, 119, 100, 0.1)'}}>
+              <div data-testid="file-info" className="mb-4 p-3 rounded-lg" style={{backgroundColor: 'rgba(164, 119, 100, 0.1)'}}>
                 <p className="text-sm font-medium" style={{color: '#36454F'}}>
-                  {fileInfo.format} • {fileInfo.name}
+                  <span data-testid="file-format">{fileInfo.format}</span> • {fileInfo.name}
                 </p>
                 {fileInfo.dimensions && (
                   <p className="text-xs" style={{color: '#36454F', opacity: 0.7}}>
@@ -217,7 +218,7 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
+        <div data-testid="error-message" className="p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
           <p className="text-red-800 text-sm">{error}</p>
         </div>
       )}
