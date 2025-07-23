@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Universal Image to ICO Converter**, a single-page Next.js application that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format entirely client-side. The app is built for the "Defined by Jenna" brand with specific styling requirements and maintains complete privacy by processing all images in the browser.
+This is **Universal Image to ICO Converter**, a premium single-page Next.js application that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format entirely client-side. The app features an advanced glassmorphism design system built for the "Defined by Jenna" permanent makeup artist brand, emphasizing privacy-first technology and professional aesthetics.
 
 ## Development Commands
 
@@ -34,14 +34,15 @@ The dev server runs on http://localhost:3000 (or next available port)
 
 ### Key Components
 
-- **`src/app/page.tsx`**: Main application container managing state flow between uploader and preview
-- **`src/app/components/FileUploader.tsx`**: Handles multi-format file upload, validation (MIME type detection, size limits), drag-and-drop UX with format detection
-- **`src/app/components/Preview.tsx`**: Shows conversion progress, generates multiple size previews, handles format-specific processing and download
-- **`src/app/components/FormatSupport.tsx`**: Interactive panel showing supported formats and helpful tips
-- **`src/app/utils/imageToIco.ts`**: Universal image conversion logic using Canvas API with timeout protection (renamed from svgToIco.ts)
+- **`src/app/page.tsx`**: Main application container with premium hero section, glassmorphism layout, and enhanced brand representation
+- **`src/app/components/FileUploader.tsx`**: Advanced drag-and-drop uploader with glassmorphism styling, animated states, and premium UI feedback
+- **`src/app/components/Preview.tsx`**: Sophisticated preview system with glass cards, interactive size selection, and animated conversion states
+- **`src/app/components/FormatSupport.tsx`**: Floating glassmorphism info panel with detailed format support and professional tips
+- **`src/app/utils/imageToIco.ts`**: Universal image conversion logic using Canvas API with timeout protection
 - **`src/app/utils/imageFormats.ts`**: Comprehensive format detection, validation, and metadata handling
 - **`src/app/utils/canvasHelpers.ts`**: High-quality image processing utilities for resampling and transparency handling
 - **`src/app/utils/workerManager.ts`**: Web Worker coordination for heavy processing (prepared for future enhancements)
+- **`src/app/globals.css`**: Advanced glassmorphism design system with custom animations, gradients, and visual effects
 
 ### Multi-Format Conversion Process
 
@@ -81,20 +82,40 @@ The application supports 6 major image formats with format-specific processing:
 - **SVG optimization**: Per-size rasterization instead of single-size scaling
 - **Format detection**: MIME type + file extension validation with fallback
 
-## Brand Styling
+## Advanced Glassmorphism Design System
 
-The application uses "Defined by Jenna" brand colors defined in CSS custom properties:
+The application features a premium glassmorphism design with sophisticated visual effects and brand integration.
 
+### Brand Colors
+"Defined by Jenna" permanent makeup artist brand palette:
 ```css
---soft-cream: #F7F5F0        /* Background */
---mocha-mousse: #A47764      /* Primary elements */
---golden-terra: #B8956A      /* Hover states */
---champagne-gold: #F7E7CE    /* Highlights */
---charcoal-gray: #36454F     /* Text */
---classic-blue: #0056B3      /* Trust signals */
+--soft-cream: #F7F5F0        /* Background base */
+--mocha-mousse: #A47764      /* Primary brand color */
+--golden-terra: #B8956A      /* Accent and hover states */
+--champagne-gold: #F7E7CE    /* Highlights and luxury accents */
+--charcoal-gray: #36454F     /* Professional text */
+--classic-blue: #0056B3      /* Trust and security indicators */
 ```
 
-**Important**: Components use inline styles for colors rather than Tailwind custom classes due to configuration limitations.
+### Glassmorphism Effects
+Advanced CSS utility classes for consistent glass design:
+```css
+.glass-card         /* Semi-transparent backgrounds with backdrop blur */
+.glass-button       /* Interactive buttons with glass effects */
+.premium-gradient   /* Sophisticated multi-layer gradients */
+.text-glow          /* Professional text shadow effects */
+.floating-animation /* Subtle floating animations */
+.pulse-glow         /* Animated glow effects for emphasis */
+```
+
+### Visual Features
+- **Multi-layer backgrounds**: Gradient overlays with radial accent patterns
+- **Backdrop blur effects**: 10-20px blur for depth and sophistication  
+- **Interactive animations**: Hover scaling, glow effects, and smooth transitions
+- **Professional typography**: Font weight variations with text glow effects
+- **Brand integration**: "Defined by Jenna" logo styling and professional positioning
+
+**Important**: All glassmorphism effects use inline styles combined with CSS classes for optimal browser compatibility.
 
 ## Error Handling & Performance
 
@@ -116,6 +137,26 @@ The application uses "Defined by Jenna" brand colors defined in CSS custom prope
 - **Timeout handling**: User-friendly messages suggesting alternative files  
 - **Graceful degradation**: Fallbacks for unsupported formats or browser limitations
 
+## Premium User Experience
+
+### Hero Section & Brand Positioning
+- **Compelling introduction**: Privacy-first messaging with "Defined by Jenna" brand integration
+- **Feature highlights**: Glassmorphism badges showcasing key benefits (100% Private, 6 Formats, Instant Processing, Free Forever)
+- **Professional presentation**: Permanent makeup artist brand positioned as community gift
+- **Trust indicators**: Security icons and privacy-first technology emphasis
+
+### Enhanced Interactive Elements
+- **FileUploader**: Premium drag-and-drop with animated states, glass effects, and smart file detection
+- **Preview**: Sophisticated icon size selection with visual feedback and glassmorphism cards
+- **FormatSupport**: Floating info panel with detailed format guidance and professional tips
+- **Download**: Celebration UI with conversion summary and prominent download button
+
+### Accessibility & UX Improvements
+- **Visual feedback**: Loading states, hover animations, and success confirmations
+- **Professional messaging**: Community-focused language emphasizing the free tool nature
+- **Brand consistency**: "Defined by Jenna" representation throughout the experience
+- **Responsive design**: Mobile-optimized glassmorphism effects and layouts
+
 ## State Management
 
 Enhanced React state management in main page component:
@@ -125,4 +166,4 @@ Enhanced React state management in main page component:
 - `icoDataUrl`: Generated ICO object URL for download
 - `error`: Format-specific validation/conversion error messages
 
-The state flows unidirectionally: FileUploader → Preview → Download, with format detection and metadata enrichment at each stage.
+The state flows unidirectionally: FileUploader → Preview → Download, with format detection and metadata enrichment at each stage. All components maintain glassmorphism styling consistency throughout state changes.

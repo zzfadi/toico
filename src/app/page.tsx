@@ -13,62 +13,153 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen" style={{backgroundColor: '#F7F5F0'}}>
-      {/* Header */}
-      <header className="py-6 md:py-8 px-4 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold mb-2" style={{color: '#36454F'}}>
-          Image to ICO Converter
-        </h1>
-        <p className="text-base md:text-lg max-w-2xl mx-auto" style={{color: '#36454F', opacity: 0.8}}>
-          Convert your images to ICO format instantly in your browser
-        </p>
-      </header>
+    <div className="min-h-screen relative">
+      {/* Premium Hero Section */}
+      <section className="relative py-12 md:py-20 px-4 text-center overflow-hidden">
+        {/* Floating decorative elements */}
+        <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-gradient-to-br from-champagne-gold/20 to-transparent blur-xl floating-animation" style={{animationDelay: '0s'}}></div>
+        <div className="absolute top-40 right-16 w-24 h-24 rounded-full bg-gradient-to-br from-mocha-mousse/15 to-transparent blur-lg floating-animation" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-20 left-1/4 w-20 h-20 rounded-full bg-gradient-to-br from-golden-terra/10 to-transparent blur-lg floating-animation" style={{animationDelay: '4s'}}></div>
+        
+        {/* Main hero content */}
+        <div className="relative z-10 max-w-4xl mx-auto">
+          {/* Brand badge */}
+          <div className="inline-flex items-center gap-2 px-6 py-3 mb-8 glass-card rounded-full">
+            <div className="w-2 h-2 rounded-full bg-gradient-to-r from-classic-blue to-golden-terra pulse-glow"></div>
+            <span className="text-sm font-medium" style={{color: '#36454F'}}>
+              Free Tool by <span className="font-serif font-bold text-glow" style={{color: '#A47764'}}>Defined By Jenna</span>
+            </span>
+          </div>
+
+          {/* Main headline */}
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-serif font-bold mb-6 text-glow" style={{color: '#36454F'}}>
+            Premium Image to
+            <br />
+            <span className="bg-gradient-to-r from-mocha-mousse via-golden-terra to-mocha-mousse bg-clip-text text-transparent">
+              ICO Converter
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 leading-relaxed" style={{color: '#36454F', opacity: 0.85}}>
+            Transform your images into professional ICO files with our 
+            <span className="font-semibold text-classic-blue"> privacy-first converter</span>. 
+            All processing happens locally on your device - your images never leave your browser.
+          </p>
+
+          {/* Feature highlights */}
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full">
+              <svg className="w-5 h-5" style={{color: '#0056B3'}} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium" style={{color: '#36454F'}}>100% Private</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full">
+              <svg className="w-5 h-5" style={{color: '#A47764'}} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium" style={{color: '#36454F'}}>6 Formats</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full">
+              <svg className="w-5 h-5" style={{color: '#B8956A'}} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium" style={{color: '#36454F'}}>Instant Processing</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full">
+              <svg className="w-5 h-5" style={{color: '#F7E7CE'}} fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span className="text-sm font-medium" style={{color: '#36454F'}}>Free Forever</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 pb-12">
-        <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
+      <main className="container mx-auto px-4 pb-16">
+        <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 max-w-7xl mx-auto">
           {/* Left Column - File Uploader */}
-          <div className="space-y-6">
-            <FileUploader
-              onFileSelect={(file, dataUrl, metadata) => {
-                setImageFile(file);
-                setImageDataUrl(dataUrl);
-                setImageMetadata(metadata || null);
-                setError(null);
-                setIcoDataUrl(null);
-              }}
-              onError={(errorMessage) => {
-                setError(errorMessage);
-                setImageFile(null);
-                setImageDataUrl(null);
-                setImageMetadata(null);
-                setIcoDataUrl(null);
-              }}
-              error={error}
-            />
+          <div className="space-y-8">
+            <div className="glass-card rounded-3xl p-8 md:p-10">
+              <FileUploader
+                onFileSelect={(file, dataUrl, metadata) => {
+                  setImageFile(file);
+                  setImageDataUrl(dataUrl);
+                  setImageMetadata(metadata || null);
+                  setError(null);
+                  setIcoDataUrl(null);
+                }}
+                onError={(errorMessage) => {
+                  setError(errorMessage);
+                  setImageFile(null);
+                  setImageDataUrl(null);
+                  setImageMetadata(null);
+                  setIcoDataUrl(null);
+                }}
+                error={error}
+              />
+            </div>
           </div>
 
           {/* Right Column - Preview */}
-          <div className="space-y-6">
-            <Preview
-              imageFile={imageFile}
-              imageDataUrl={imageDataUrl}
-              imageMetadata={imageMetadata}
-              onConversionComplete={(icoUrl: string) => setIcoDataUrl(icoUrl)}
-              icoDataUrl={icoDataUrl}
-            />
+          <div className="space-y-8">
+            <div className="glass-card rounded-3xl p-8 md:p-10">
+              <Preview
+                imageFile={imageFile}
+                imageDataUrl={imageDataUrl}
+                imageMetadata={imageMetadata}
+                onConversionComplete={(icoUrl: string) => setIcoDataUrl(icoUrl)}
+                icoDataUrl={icoDataUrl}
+              />
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-16 py-8 px-4 text-center border-t border-charcoal-gray/10">
-        <p className="text-sm text-charcoal-gray/70 mb-2">
-          <span className="text-classic-blue font-semibold">Secure & Private:</span> All conversions happen in your browser.
-        </p>
-        <p className="text-sm text-charcoal-gray/60 font-serif italic">
-          A tool by Defined by Jenna
-        </p>
+      {/* Enhanced Footer */}
+      <footer className="relative mt-20 py-12 px-4">
+        <div className="absolute inset-0 premium-gradient opacity-50"></div>
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <div className="glass-card rounded-2xl p-8 mb-8">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-mocha-mousse to-golden-terra flex items-center justify-center">
+                  <span className="text-white font-serif font-bold text-lg">DJ</span>
+                </div>
+                <div className="text-left">
+                  <p className="font-serif font-bold text-lg text-glow" style={{color: '#A47764'}}>
+                    Defined By Jenna
+                  </p>
+                  <p className="text-sm opacity-75" style={{color: '#36454F'}}>
+                    Premium Makeup Artistry
+                  </p>
+                </div>
+              </div>
+              <div className="w-px h-12 bg-gradient-to-b from-transparent via-mocha-mousse/30 to-transparent hidden sm:block"></div>
+              <div className="text-center sm:text-left">
+                <p className="text-sm font-medium mb-1" style={{color: '#36454F'}}>
+                  <span style={{color: '#0056B3'}}>🔒</span> Privacy-First Technology
+                </p>
+                <p className="text-xs opacity-75" style={{color: '#36454F'}}>
+                  Your images never leave your device
+                </p>
+              </div>
+            </div>
+            
+            <div className="h-px bg-gradient-to-r from-transparent via-mocha-mousse/20 to-transparent mb-6"></div>
+            
+            <p className="text-sm leading-relaxed max-w-2xl mx-auto mb-4" style={{color: '#36454F', opacity: 0.8}}>
+              This professional image converter is our gift to the creative community. 
+              <span className="font-medium" style={{color: '#A47764'}}> Completely free, forever.</span>
+            </p>
+            
+            <p className="text-xs font-serif italic" style={{color: '#36454F', opacity: 0.6}}>
+              Crafted with precision for artists, designers, and creators worldwide
+            </p>
+          </div>
+        </div>
       </footer>
       
       <FormatSupport />

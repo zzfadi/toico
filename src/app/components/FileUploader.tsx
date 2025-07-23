@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { validateImageFile, getSupportedMimeTypes, getSupportedExtensions, getFormatSpecificMessage } from '../utils/imageFormats';
 import { getImageDimensions } from '../utils/canvasHelpers';
 
@@ -14,6 +14,7 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileInfo, setFileInfo] = useState<{ name: string; format: string; dimensions?: { width: number; height: number } } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
     setIsProcessing(true);
@@ -135,14 +136,26 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
   const supportedMimeTypes = getSupportedMimeTypes().join(',');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Upload Section Title */}
+      <div className="text-center">
+        <h2 className="text-2xl font-serif font-bold mb-2 text-glow" style={{color: '#36454F'}}>
+          Upload Your Image
+        </h2>
+        <p className="text-sm opacity-75" style={{color: '#36454F'}}>
+          Drag and drop or click to select your image file
+        </p>
+      </div>
+
       <div
-        className="relative border-2 border-dashed rounded-lg p-6 md:p-8 text-center transition-all duration-200"
+        className={`relative border-2 border-dashed rounded-2xl p-8 md:p-12 text-center transition-all duration-300 ${
+          isDragOver ? 'glass-card scale-[1.02]' : 'premium-gradient'
+        }`}
         style={{
-          borderColor: isDragOver ? '#B8956A' : '#A47764',
-          backgroundColor: isDragOver ? 'rgba(247, 231, 206, 0.2)' : 'rgba(247, 231, 206, 0.1)',
-          opacity: isProcessing ? 0.5 : 1,
-          pointerEvents: isProcessing ? 'none' : 'auto'
+          borderColor: isDragOver ? '#B8956A' : 'rgba(164, 119, 100, 0.3)',
+          opacity: isProcessing ? 0.7 : 1,
+          pointerEvents: isProcessing ? 'none' : 'auto',
+          backdropFilter: isDragOver ? 'blur(20px)' : 'blur(10px)'
         }}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -150,6 +163,7 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
         onDrop={handleDrop}
       >
         <input
+          ref={fileInputRef}
           type="file"
           accept={`${supportedMimeTypes},${supportedExtensions}`}
           onChange={handleFileInput}
@@ -159,39 +173,54 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
           aria-describedby="file-upload-help"
         />
         
-        <div className="space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{backgroundColor: 'rgba(164, 119, 100, 0.2)'}}>
-            <svg
-              className="w-8 h-8"
-              fill="none"
-              stroke="#A47764"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
+        <div className="space-y-6">
+          <div className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
+            isDragOver ? 'pulse-glow scale-110' : ''
+          }`} style={{
+            background: isDragOver 
+              ? 'linear-gradient(135deg, rgba(184, 149, 106, 0.8), rgba(164, 119, 100, 0.9))' 
+              : 'linear-gradient(135deg, rgba(164, 119, 100, 0.3), rgba(184, 149, 106, 0.2))',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            {isProcessing ? (
+              <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-white rounded-full"></div>
+            ) : (
+              <svg
+                className="w-10 h-10 transition-transform duration-300"
+                fill="none"
+                stroke={isDragOver ? '#F7F5F0' : '#A47764'}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+            )}
           </div>
           
           <div>
-            <p className="text-lg md:text-xl font-semibold mb-2" style={{color: '#36454F'}}>
-              {isProcessing ? 'Processing...' : 'Drag & Drop your image here'}
+            <p className="text-xl md:text-2xl font-serif font-bold mb-3 text-glow" style={{color: '#36454F'}}>
+              {isProcessing ? 'Processing Your Image...' : isDragOver ? 'Drop Your Image Here' : 'Upload Your Image'}
             </p>
-            <p className="text-sm md:text-base mb-4" style={{color: '#36454F', opacity: 0.7}}>
-              or click to browse your files
+            <p className="text-sm md:text-base mb-6" style={{color: '#36454F', opacity: 0.8}}>
+              {isDragOver ? 'Release to upload' : 'Drag & drop or click to browse'}
             </p>
             
             {fileInfo && (
-              <div className="mb-4 p-3 rounded-lg" style={{backgroundColor: 'rgba(164, 119, 100, 0.1)'}}>
-                <p className="text-sm font-medium" style={{color: '#36454F'}}>
-                  {fileInfo.format} • {fileInfo.name}
-                </p>
+              <div className="mb-6 p-4 glass-card rounded-xl">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-classic-blue to-golden-terra"></div>
+                  <p className="text-sm font-semibold" style={{color: '#36454F'}}>
+                    {fileInfo.format} • {fileInfo.name}
+                  </p>
+                </div>
                 {fileInfo.dimensions && (
-                  <p className="text-xs" style={{color: '#36454F', opacity: 0.7}}>
-                    {fileInfo.dimensions.width} × {fileInfo.dimensions.height} pixels
+                  <p className="text-xs font-medium" style={{color: '#36454F', opacity: 0.7}}>
+                    Resolution: {fileInfo.dimensions.width} × {fileInfo.dimensions.height} pixels
                   </p>
                 )}
               </div>
@@ -199,36 +228,43 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
             
             <button
               type="button"
-              className="inline-flex items-center px-6 py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: '#A47764',
-                color: '#F7F5F0'
-              }}
+              onClick={() => fileInputRef.current?.click()}
+              className="glass-button px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
               disabled={isProcessing}
             >
-              {isProcessing ? 'Processing...' : 'Select File'}
+              {isProcessing ? 'Processing...' : 'Browse Files'}
             </button>
           </div>
           
-          <p id="file-upload-help" className="text-sm" style={{color: '#36454F', opacity: 0.6}}>
-            Supported formats: PNG, JPEG, WebP, GIF, BMP, SVG • Max size: 50MB (100MB for SVG)
-          </p>
+          <div className="pt-4 border-t border-white/20">
+            <p id="file-upload-help" className="text-sm font-medium" style={{color: '#36454F', opacity: 0.7}}>
+              <span className="block mb-1">✨ Supported formats: PNG, JPEG, WebP, GIF, BMP, SVG</span>
+              <span className="block">📦 Max size: 50MB (100MB for SVG files)</span>
+            </p>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
-          <p className="text-red-800 text-sm">{error}</p>
+        <div className="glass-card rounded-xl p-4 border border-red-300/50" style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))'
+        }} role="alert">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{color: '#DC2626'}} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium" style={{color: '#DC2626'}}>{error}</p>
+          </div>
         </div>
       )}
 
-      {!error && (
+      {!error && fileInfo && (
         <button
           onClick={handleClear}
-          className="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
-          style={{color: '#36454F', opacity: 0.7}}
+          className="w-full px-6 py-3 text-sm font-medium rounded-xl transition-all duration-300 hover:scale-[1.02] glass-card"
+          style={{color: '#36454F', opacity: 0.8}}
         >
-          Clear Selection
+          🗑️ Clear Selection
         </button>
       )}
     </div>
