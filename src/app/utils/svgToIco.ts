@@ -1,7 +1,7 @@
 // Multi-size ICO conversion
 const ICO_SIZES = [16, 32, 48, 64, 128, 256] as const;
 
-export async function convertSvgToIco(svgDataUrl: string): Promise<string> {
+export async function convertSvgToIco(svgDataUrl: string, selectedSizes?: number[]): Promise<string> {
   try {
     if (!svgDataUrl || !svgDataUrl.includes(',')) {
       throw new Error('Invalid SVG data URL');
@@ -14,10 +14,13 @@ export async function convertSvgToIco(svgDataUrl: string): Promise<string> {
     
     const svgContent = atob(svgData);
     
-    // Generate PNG data for multiple sizes
+    // Use selected sizes or default to all sizes
+    const sizesToUse = selectedSizes && selectedSizes.length > 0 ? selectedSizes : [...ICO_SIZES];
+    
+    // Generate PNG data for selected sizes
     const pngData: { size: number; data: Uint8Array }[] = [];
     
-    for (const size of ICO_SIZES) {
+    for (const size of sizesToUse) {
       const pngDataUrl = await renderSvgToPng(svgContent, size);
       if (pngDataUrl) {
         const response = await fetch(pngDataUrl);

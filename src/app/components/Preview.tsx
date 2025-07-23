@@ -9,13 +9,14 @@ interface PreviewProps {
   icoDataUrl: string | null;
 }
 
-const PREVIEW_SIZES = [256, 64, 32, 16] as const;
+const PREVIEW_SIZES = [256, 128, 64, 48, 32, 16] as const;
 
 export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }: PreviewProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [previewImages, setPreviewImages] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [hasConverted, setHasConverted] = useState(false);
+  const [selectedSizes, setSelectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
 
   useEffect(() => {
     if (!svgDataUrl) {
@@ -58,10 +59,10 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
         await Promise.allSettled(previewPromises);
         setPreviewImages(previews);
         
-        // Convert to ICO with timeout
+        // Convert to ICO with timeout using selected sizes
         try {
           const icoUrl = await Promise.race([
-            convertSvgToIco(svgDataUrl),
+            convertSvgToIco(svgDataUrl, Array.from(selectedSizes)),
             new Promise<never>((_, reject) => 
               setTimeout(() => reject(new Error('Conversion timeout after 10 seconds')), 10000)
             )
@@ -86,7 +87,7 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
     };
 
     generatePreviews();
-  }, [svgDataUrl]); // Removed onConversionComplete to prevent infinite loop
+  }, [svgDataUrl, selectedSizes, hasConverted, icoDataUrl]); // Re-run when sizes change
 
   const renderSvgToDataUrl = (svgContent: string, size: number): Promise<string | null> => {
     return new Promise((resolve, reject) => {
@@ -200,31 +201,53 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
               <p className="text-red-600">{error}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {PREVIEW_SIZES.map((size) => (
                 <div
                   key={size}
-                  className="text-center p-3 md:p-4 bg-champagne-gold/10 rounded-lg border border-mocha-mousse/10"
+                  className={`text-center p-3 md:p-4 rounded-lg border transition-all ${
+                    selectedSizes.has(size)
+                      ? 'bg-mocha-mousse/10 border-mocha-mousse/40'
+                      : 'bg-champagne-gold/10 border-mocha-mousse/10'
+                  }`}
                 >
-                  <div className="flex items-center justify-center mb-3 h-16">
+                  <div className="flex items-center justify-center mb-2">
+                    <input
+                      type="checkbox"
+                      id={`size-${size}`}
+                      checked={selectedSizes.has(size)}
+                      onChange={(e) => {
+                        const newSizes = new Set(selectedSizes);
+                        if (e.target.checked) {
+                          newSizes.add(size);
+                        } else if (newSizes.size > 1) { // Ensure at least one size is selected
+                          newSizes.delete(size);
+                        }
+                        setSelectedSizes(newSizes);
+                        setHasConverted(false); // Reset conversion state when sizes change
+                      }}
+                      className="w-4 h-4 text-mocha-mousse bg-soft-cream border-mocha-mousse/30 rounded focus:ring-mocha-mousse focus:ring-2"
+                    />
+                    <label htmlFor={`size-${size}`} className="ml-2 text-sm font-medium text-charcoal-gray cursor-pointer">
+                      {size} × {size}
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-center mb-2 h-12">
                     {previewImages[size] ? (
                       <img
                         src={previewImages[size]}
                         alt={`${size}x${size} preview`}
                         className="max-w-full max-h-full"
                         style={{
-                          width: Math.min(size, 48),
-                          height: Math.min(size, 48),
+                          width: Math.min(size, 40),
+                          height: Math.min(size, 40),
                           imageRendering: size <= 32 ? 'pixelated' : 'auto'
                         }}
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-mocha-mousse/20 rounded animate-pulse" />
+                      <div className="w-10 h-10 bg-mocha-mousse/20 rounded animate-pulse" />
                     )}
                   </div>
-                  <p className="text-sm font-medium text-charcoal-gray">
-                    {size} × {size}
-                  </p>
                 </div>
               ))}
             </div>
@@ -245,7 +268,7 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
             disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
-          {isConverting ? 'Converting...' : 'Download .ICO'}
+          {isConverting ? 'Converting...' : `Download .ICO (${selectedSizes.size} ${selectedSizes.size === 1 ? 'size' : 'sizes'})`}
         </button>
       )}
     </div>
