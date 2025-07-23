@@ -15,11 +15,18 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
   const [isConverting, setIsConverting] = useState(false);
   const [previewImages, setPreviewImages] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [hasConverted, setHasConverted] = useState(false);
 
   useEffect(() => {
     if (!svgDataUrl) {
       setPreviewImages({});
       setError(null);
+      setHasConverted(false);
+      return;
+    }
+    
+    // Don't re-convert if we already have a successful conversion
+    if (hasConverted && icoDataUrl) {
       return;
     }
 
@@ -61,6 +68,7 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
           ]);
           
           onConversionComplete(icoUrl);
+          setHasConverted(true);
         } catch (conversionError) {
           console.error('ICO conversion failed:', conversionError);
           throw new Error('Failed to convert to ICO format');
@@ -71,13 +79,14 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
         const errorMessage = err instanceof Error ? err.message : 'Failed to convert SVG';
         setError(`Conversion failed: ${errorMessage}. Please try a different file.`);
         onConversionComplete(''); // Clear any previous conversion
+        setHasConverted(false);
       } finally {
         setIsConverting(false);
       }
     };
 
     generatePreviews();
-  }, [svgDataUrl, onConversionComplete]);
+  }, [svgDataUrl]); // Removed onConversionComplete to prevent infinite loop
 
   const renderSvgToDataUrl = (svgContent: string, size: number): Promise<string | null> => {
     return new Promise((resolve, reject) => {
