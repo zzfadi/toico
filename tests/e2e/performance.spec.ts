@@ -264,7 +264,7 @@ test.describe('Performance Tests', () => {
     const startTime = Date.now();
     
     // Start download
-    const downloadPromise = page.waitForDownload();
+    const downloadPromise = page.waitForEvent('download');
     await downloadButton.click();
     const download = await downloadPromise;
     

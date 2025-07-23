@@ -59,7 +59,7 @@ test.describe('File Upload Functionality', () => {
   test('should handle file size validation', async ({ page }) => {
     // Test with a theoretical large file
     // In a real scenario, you would create a file that exceeds the limit
-    await test.skip('Requires actual large file fixture');
+    test.skip();
   });
 
   test('should clear uploaded file', async ({ page }) => {
@@ -112,7 +112,7 @@ test.describe('File Upload Functionality', () => {
 
   test('should handle drag and drop upload', async ({ page }) => {
     // This test would require more complex setup for drag and drop simulation
-    await test.skip('Drag and drop requires more complex file handling setup');
+    test.skip();
   });
 
   test('should validate MIME types correctly', async ({ page }) => {

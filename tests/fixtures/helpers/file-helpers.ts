@@ -1,5 +1,5 @@
 import { Page, expect } from '@playwright/test';
-import path from 'path';
+import * as path from 'path';
 
 export class FileHelpers {
   constructor(private page: Page) {}

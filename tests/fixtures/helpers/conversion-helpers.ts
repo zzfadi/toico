@@ -47,7 +47,7 @@ export class ConversionHelpers {
     const downloadButton = this.page.locator('[data-testid="download-button"]');
     
     // Start waiting for download before clicking
-    const downloadPromise = this.page.waitForDownload();
+    const downloadPromise = this.page.waitForEvent('download');
     await downloadButton.click();
     const download = await downloadPromise;
     

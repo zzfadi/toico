@@ -40,7 +40,7 @@ test.describe('Error Handling and Edge Cases', () => {
 
   test('should handle corrupted image files', async ({ page }) => {
     // Create a corrupted image file for testing
-    await test.skip('Requires specific corrupted image fixtures');
+    test.skip();
     
     // This would test how the app handles files that appear to be images
     // but have corrupted data
@@ -79,7 +79,7 @@ test.describe('Error Handling and Edge Cases', () => {
 
   test('should handle timeout scenarios gracefully', async ({ page }) => {
     // This test would need a complex file that might timeout
-    await test.skip('Requires complex file that can trigger conversion timeout');
+    test.skip();
     
     // Would test:
     // - Conversion timeout handling
@@ -89,7 +89,7 @@ test.describe('Error Handling and Edge Cases', () => {
 
   test('should validate file size limits', async ({ page }) => {
     // Test with various file sizes
-    await test.skip('Requires files of different sizes to test limits');
+    test.skip();
     
     // Would test:
     // - Files at the size limit
@@ -102,7 +102,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const malformedSvg = '<svg><rect></svg>'; // Missing closing tag
     
     // In a real test, we'd create this file and test upload
-    await test.skip('Requires malformed SVG fixture');
+    test.skip();
   });
 
   test('should handle browser compatibility issues', async ({ page }) => {
@@ -207,12 +207,12 @@ test.describe('Error Handling and Edge Cases', () => {
 
   test('should handle storage quota exceeded', async ({ page }) => {
     // This would test behavior when browser storage is full
-    await test.skip('Requires specific setup to trigger storage quota issues');
+    test.skip();
   });
 
   test('should validate input sanitization', async ({ page }) => {
     // Test with potentially malicious file names or content
-    await test.skip('Requires specific malicious file fixtures');
+    test.skip();
     
     // Would test:
     // - XSS prevention in file names
@@ -222,7 +222,7 @@ test.describe('Error Handling and Edge Cases', () => {
 
   test('should handle unexpected file extensions', async ({ page }) => {
     // Test with files that have wrong extensions
-    await test.skip('Requires files with mismatched extensions');
+    test.skip();
     
     // Example: PNG file with .jpg extension
     // Should rely on MIME type detection, not just extension
@@ -235,7 +235,7 @@ test.describe('Error Handling and Edge Cases', () => {
     ).join('');
     
     // Create a complex SVG that uses more memory
-    await test.skip('Requires large/complex file fixtures');
+    test.skip();
   });
 
   test('should provide helpful error recovery options', async ({ page }) => {
@@ -253,7 +253,7 @@ test.describe('Error Handling and Edge Cases', () => {
 
   test('should handle drag and drop errors', async ({ page }) => {
     // Test dropping non-file items
-    await test.skip('Requires complex drag and drop error simulation');
+    test.skip();
     
     // Would test:
     // - Dropping text instead of files

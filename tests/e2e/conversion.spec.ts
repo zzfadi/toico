@@ -131,7 +131,7 @@ test.describe('Image Conversion Functionality', () => {
 
   test('should handle conversion timeout', async ({ page }) => {
     // This test would need a complex/large file that might timeout
-    await test.skip('Requires complex file that can trigger timeout');
+    test.skip();
   });
 
   test('should download ICO file with correct properties', async ({ page }) => {
