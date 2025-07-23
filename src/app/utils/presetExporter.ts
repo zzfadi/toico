@@ -163,46 +163,75 @@ export class PresetExporter {
   }
 
   private async generatePngAtSize(imageFile: File, size: number): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Canvas not supported'));
-        return;
-      }
-
-      canvas.width = size;
-      canvas.height = size;
-
-      const img = new Image();
-      img.onload = () => {
-        try {
-          // Enable high-quality scaling
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-
-          // Draw image scaled to exact size
-          ctx.drawImage(img, 0, 0, size, size);
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject(new Error('Failed to generate PNG blob'));
-              }
-            },
-            'image/png',
-            1.0
-          );
-        } catch (error) {
-          reject(error);
+    return Promise.race([
+      new Promise<Blob>((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas not supported'));
+          return;
         }
-      };
 
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(imageFile);
-    });
+        canvas.width = size;
+        canvas.height = size;
+
+        const img = new Image();
+        const imageUrl = URL.createObjectURL(imageFile);
+        
+        // Set timeout for image loading
+        const imageTimeout = setTimeout(() => {
+          URL.revokeObjectURL(imageUrl);
+          reject(new Error('Image loading timeout'));
+        }, 10000);
+
+        img.onload = () => {
+          clearTimeout(imageTimeout);
+          try {
+            // Enable high-quality scaling
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Draw image scaled to exact size
+            ctx.drawImage(img, 0, 0, size, size);
+
+            // Set timeout for canvas.toBlob operation
+            const blobTimeout = setTimeout(() => {
+              URL.revokeObjectURL(imageUrl);
+              reject(new Error('Canvas toBlob timeout'));
+            }, 5000);
+
+            canvas.toBlob(
+              (blob) => {
+                clearTimeout(blobTimeout);
+                URL.revokeObjectURL(imageUrl);
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Failed to generate PNG blob'));
+                }
+              },
+              'image/png',
+              1.0
+            );
+          } catch (error) {
+            clearTimeout(imageTimeout);
+            URL.revokeObjectURL(imageUrl);
+            reject(error);
+          }
+        };
+
+        img.onerror = () => {
+          clearTimeout(imageTimeout);
+          URL.revokeObjectURL(imageUrl);
+          reject(new Error('Failed to load image'));
+        };
+        
+        img.src = imageUrl;
+      }),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('PNG generation timeout after 15 seconds')), 15000)
+      )
+    ]);
   }
 
   private async packageFilesIntoZip(
