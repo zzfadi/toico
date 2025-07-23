@@ -69,47 +69,84 @@ export class PresetExporter {
         subfolder?: string;
       }> = [];
 
-      // Generate all required sizes
+      // Generate all required sizes with parallel processing and concurrency control
+      const CONCURRENCY_LIMIT = 4; // Process max 4 sizes simultaneously for browser stability
+      const processingQueue: Array<() => Promise<void>> = [];
+
+      // Create processing tasks for all sizes
       for (const size of allSizes) {
-        this.reportProgress({
-          currentSize: size,
-          totalSizes: allSizes.length,
-          currentFile: `Generating ${size}×${size}px...`,
-          overallProgress: Math.round((processedCount / allSizes.length) * 80), // 80% for processing
-          status: 'processing'
-        });
-
-        try {
-          let blob: Blob;
-          
-          if (preset.format === 'ico') {
-            // Generate ICO file
-            const icoUrl = await convertImageToIco(imageFile, [size]);
-            const response = await fetch(icoUrl);
-            blob = await response.blob();
-            URL.revokeObjectURL(icoUrl);
-          } else {
-            // Generate PNG file
-            blob = await this.generatePngAtSize(imageFile, size);
-          }
-
-          // Find custom file configuration for this size
-          const customFile = preset.customFiles?.find(cf => cf.size === size);
-          const filename = generatePresetFilename(baseName, size, preset, customFile);
-
-          generatedFiles.push({
-            size,
-            blob,
-            filename,
-            subfolder: customFile?.subfolder
+        const processSize = async () => {
+          this.reportProgress({
+            currentSize: size,
+            totalSizes: allSizes.length,
+            currentFile: `Generating ${size}×${size}px...`,
+            overallProgress: Math.round((processedCount / allSizes.length) * 80), // 80% for processing
+            status: 'processing'
           });
 
-          processedCount++;
-        } catch (error) {
-          console.error(`Failed to generate size ${size}px:`, error);
-          // Continue with other sizes instead of failing completely
-        }
+          try {
+            let blob: Blob;
+            
+            if (preset.format === 'ico') {
+              // Generate ICO file
+              const icoUrl = await convertImageToIco(imageFile, [size]);
+              const response = await fetch(icoUrl);
+              blob = await response.blob();
+              URL.revokeObjectURL(icoUrl);
+            } else {
+              // Generate PNG file with timeout protection
+              blob = await Promise.race([
+                this.generatePngAtSize(imageFile, size),
+                new Promise<never>((_, reject) => 
+                  setTimeout(() => reject(new Error(`PNG generation timeout for ${size}px after 30 seconds`)), 30000)
+                )
+              ]);
+            }
+
+            // Find custom file configuration for this size
+            const customFile = preset.customFiles?.find(cf => cf.size === size);
+            const filename = generatePresetFilename(baseName, size, preset, customFile);
+
+            generatedFiles.push({
+              size,
+              blob,
+              filename,
+              subfolder: customFile?.subfolder
+            });
+
+            processedCount++;
+          } catch (error) {
+            console.error(`Failed to generate size ${size}px:`, error);
+            // Continue with other sizes instead of failing completely
+          }
+        };
+
+        processingQueue.push(processSize);
       }
+
+      // Process sizes with controlled concurrency
+      const processWithConcurrency = async (tasks: Array<() => Promise<void>>, limit: number) => {
+        const executing: Promise<void>[] = [];
+        
+        for (const task of tasks) {
+          const promise = task();
+          executing.push(promise);
+          
+          if (executing.length >= limit) {
+            await Promise.race(executing);
+            // Remove completed promises
+            const stillExecuting = executing.filter(p => 
+              Promise.race([p.then(() => false), Promise.resolve(true)])
+            );
+            executing.splice(0, executing.length, ...stillExecuting);
+          }
+        }
+        
+        // Wait for all remaining tasks to complete
+        await Promise.all(executing);
+      };
+
+      await processWithConcurrency(processingQueue, CONCURRENCY_LIMIT);
 
       // Package into ZIP with proper folder structure
       this.reportProgress({

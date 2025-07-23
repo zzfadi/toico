@@ -93,48 +93,57 @@ export default function BatchFileUploader({
 
     setFiles(batchFiles);
 
-    // Process each file
-    const results: BatchFileInfo[] = [];
+    // Process files with parallel processing and concurrency control
+    const results: BatchFileInfo[] = [...batchFiles]; // Start with all files
     const totalFiles = batchFiles.length;
-    
-    for (let i = 0; i < batchFiles.length; i++) {
-      const fileInfo = batchFiles[i];
-      
-      if (fileInfo.status === 'error') {
-        results.push(fileInfo);
-        continue;
-      }
+    const CONCURRENCY_LIMIT = 3; // Process max 3 files simultaneously for browser stability
+    let completedFiles = 0;
 
+    // Filter out files that already have errors
+    const validFiles = batchFiles.filter(fileInfo => fileInfo.status !== 'error');
+    
+    // Create processing tasks for all valid files
+    const processingTasks = validFiles.map((fileInfo) => async () => {
       // Update status to processing
       fileInfo.status = 'processing';
       fileInfo.progress = 10;
-      setFiles([...batchFiles]);
+      setFiles([...results]);
 
       try {
         if (outputFormat === 'ico') {
-          // Convert to ICO
+          // Convert to ICO with timeout protection
           fileInfo.progress = 50;
-          setFiles([...batchFiles]);
+          setFiles([...results]);
           
-          const icoUrl = await convertImageToIco(fileInfo.file, selectedSizes);
+          const icoUrl = await Promise.race([
+            convertImageToIco(fileInfo.file, selectedSizes),
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('ICO conversion timeout after 30 seconds')), 30000)
+            )
+          ]);
           fileInfo.results = { ico: icoUrl };
           fileInfo.progress = 100;
           fileInfo.status = 'completed';
           
         } else {
-          // Convert to individual SVGs
+          // Convert to individual SVGs with timeout protection
           fileInfo.progress = 50;
-          setFiles([...batchFiles]);
+          setFiles([...results]);
           
-          const svgFiles = await convertImageToIndividualSvgs(
-            fileInfo.file, 
-            svgSelectedSizes, 
-            {
-              embedHighQuality: true,
-              includeMetadata: true,
-              optimizeForWeb: true
-            }
-          );
+          const svgFiles = await Promise.race([
+            convertImageToIndividualSvgs(
+              fileInfo.file, 
+              svgSelectedSizes, 
+              {
+                embedHighQuality: true,
+                includeMetadata: true,
+                optimizeForWeb: true
+              }
+            ),
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('SVG conversion timeout after 30 seconds')), 30000)
+            )
+          ]);
           fileInfo.results = { svgs: svgFiles };
           fileInfo.progress = 100;
           fileInfo.status = 'completed';
@@ -145,13 +154,36 @@ export default function BatchFileUploader({
         fileInfo.error = error instanceof Error ? error.message : 'Conversion failed';
       }
 
-      results.push(fileInfo);
-      
       // Update overall progress
-      const completedFiles = i + 1;
+      completedFiles++;
       setOverallProgress(Math.round((completedFiles / totalFiles) * 100));
-      setFiles([...batchFiles]);
-    }
+      setFiles([...results]);
+    });
+
+    // Process tasks with controlled concurrency
+    const processWithConcurrency = async (tasks: Array<() => Promise<void>>, limit: number) => {
+      let index = 0;
+      
+      const executeNext = async (): Promise<void> => {
+        if (index >= tasks.length) return;
+        
+        const taskIndex = index++;
+        await tasks[taskIndex]();
+        
+        // Process next task
+        return executeNext();
+      };
+      
+      // Start initial batch of concurrent tasks
+      const workers = Array(Math.min(limit, tasks.length))
+        .fill(null)
+        .map(() => executeNext());
+      
+      // Wait for all workers to complete
+      await Promise.all(workers);
+    };
+
+    await processWithConcurrency(processingTasks, CONCURRENCY_LIMIT);
 
     setIsProcessing(false);
     onBatchComplete(results);

@@ -226,11 +226,16 @@ export default function Home() {
                         if (selectedPreset && file) {
                           setIsExportingPreset(true);
                           try {
-                            const result = await exportPresetFromFile(
-                              file,
-                              selectedPreset,
-                              (progress) => setPresetProgress(progress)
-                            );
+                            const result = await Promise.race([
+                              exportPresetFromFile(
+                                file,
+                                selectedPreset,
+                                (progress) => setPresetProgress(progress)
+                              ),
+                              new Promise<never>((_, reject) => 
+                                setTimeout(() => reject(new Error('Preset export timeout after 60 seconds')), 60000)
+                              )
+                            ]);
                             setPresetExportResult(result);
                             
                             if (result.success && result.downloadUrl) {
