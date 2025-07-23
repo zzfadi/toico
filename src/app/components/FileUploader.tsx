@@ -1,9 +1,11 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { validateImageFile, getSupportedMimeTypes, getSupportedExtensions, getFormatSpecificMessage } from '../utils/imageFormats';
+import { getImageDimensions } from '../utils/canvasHelpers';
 
 interface FileUploaderProps {
-  onFileSelect: (file: File, dataUrl: string) => void;
+  onFileSelect: (file: File | null, dataUrl: string, metadata?: { format: string; dimensions?: { width: number; height: number } }) => void;
   onError: (error: string) => void;
   error: string | null;
 }
@@ -11,39 +13,78 @@ interface FileUploaderProps {
 export default function FileUploader({ onFileSelect, onError, error }: FileUploaderProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const validateFile = (file: File): boolean => {
-    if (file.type !== 'image/svg+xml') {
-      onError('Invalid file type. Please upload a .SVG file.');
-      return false;
-    }
-
-    if (file.size > 100 * 1024 * 1024) { // 100MB limit
-      onError('File size too large. Please upload a file smaller than 100MB.');
-      return false;
-    }
-    
-    return true;
-  };
+  const [fileInfo, setFileInfo] = useState<{ name: string; format: string; dimensions?: { width: number; height: number } } | null>(null);
 
   const processFile = useCallback(async (file: File) => {
-    if (!validateFile(file)) return;
-    
     setIsProcessing(true);
+    setFileInfo(null);
     
     try {
+      // Validate the file
+      const validation = validateImageFile(file);
+      if (!validation.isValid) {
+        onError(validation.error || 'Invalid file');
+        setIsProcessing(false);
+        return;
+      }
+
+      const format = validation.format!;
+      
+      // Get image dimensions for raster images
+      let dimensions: { width: number; height: number } | undefined;
+      if (format.formatKey !== 'svg') {
+        try {
+          dimensions = await getImageDimensions(file);
+          
+          // Check minimum resolution for better quality
+          if (dimensions && (dimensions.width < 64 || dimensions.height < 64)) {
+            const formatSpecificMsg = getFormatSpecificMessage(format.formatKey);
+            const warning = `Image resolution is ${dimensions.width}x${dimensions.height}. For best results, use images of at least 256x256 pixels.`;
+            onError(formatSpecificMsg ? `${warning} ${formatSpecificMsg}` : warning);
+            setIsProcessing(false);
+            return;
+          }
+        } catch (dimensionError) {
+          console.warn('Could not detect image dimensions:', dimensionError);
+        }
+      }
+
+      // Set file info for display
+      setFileInfo({
+        name: file.name,
+        format: format.format.name,
+        dimensions
+      });
+
+      // Show format-specific message if available
+      const formatMessage = getFormatSpecificMessage(format.formatKey);
+      if (formatMessage) {
+        // This is informational, not an error
+        console.log('Format info:', formatMessage);
+      }
+
+      // Read file for preview/processing
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        onFileSelect(file, result);
+        onFileSelect(file, result, {
+          format: format.format.name,
+          dimensions
+        });
         setIsProcessing(false);
       };
       reader.onerror = () => {
         onError('Error reading file. Please try again.');
         setIsProcessing(false);
       };
-      reader.readAsDataURL(file);
+      
+      if (format.formatKey === 'svg') {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsDataURL(file);
+      }
     } catch (err) {
+      console.error('File processing error:', err);
       onError('Error processing file. Please try again.');
       setIsProcessing(false);
     }
@@ -85,9 +126,13 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
   }, [processFile]);
 
   const handleClear = () => {
-    onFileSelect(null as any, '');
+    onFileSelect(null, '', undefined);
     onError('');
+    setFileInfo(null);
   };
+
+  const supportedExtensions = getSupportedExtensions().join(',');
+  const supportedMimeTypes = getSupportedMimeTypes().join(',');
 
   return (
     <div className="space-y-4">
@@ -106,11 +151,11 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
       >
         <input
           type="file"
-          accept=".svg,image/svg+xml"
+          accept={`${supportedMimeTypes},${supportedExtensions}`}
           onChange={handleFileInput}
           className="absolute inset-0 opacity-0 cursor-pointer"
           disabled={isProcessing}
-          aria-label="Upload SVG file"
+          aria-label="Upload image file"
           aria-describedby="file-upload-help"
         />
         
@@ -133,11 +178,24 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
           
           <div>
             <p className="text-lg md:text-xl font-semibold mb-2" style={{color: '#36454F'}}>
-              {isProcessing ? 'Processing...' : 'Drag & Drop your .SVG here'}
+              {isProcessing ? 'Processing...' : 'Drag & Drop your image here'}
             </p>
             <p className="text-sm md:text-base mb-4" style={{color: '#36454F', opacity: 0.7}}>
               or click to browse your files
             </p>
+            
+            {fileInfo && (
+              <div className="mb-4 p-3 rounded-lg" style={{backgroundColor: 'rgba(164, 119, 100, 0.1)'}}>
+                <p className="text-sm font-medium" style={{color: '#36454F'}}>
+                  {fileInfo.format} • {fileInfo.name}
+                </p>
+                {fileInfo.dimensions && (
+                  <p className="text-xs" style={{color: '#36454F', opacity: 0.7}}>
+                    {fileInfo.dimensions.width} × {fileInfo.dimensions.height} pixels
+                  </p>
+                )}
+              </div>
+            )}
             
             <button
               type="button"
@@ -153,7 +211,7 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
           </div>
           
           <p id="file-upload-help" className="text-sm" style={{color: '#36454F', opacity: 0.6}}>
-            Supported format: SVG • Max size: 100MB
+            Supported formats: PNG, JPEG, WebP, GIF, BMP, SVG • Max size: 50MB (100MB for SVG)
           </p>
         </div>
       </div>

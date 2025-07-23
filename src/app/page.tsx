@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import FileUploader from './components/FileUploader';
 import Preview from './components/Preview';
+import FormatSupport from './components/FormatSupport';
 
 export default function Home() {
-  const [svgFile, setSvgFile] = useState<File | null>(null);
-  const [svgDataUrl, setSvgDataUrl] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageMetadata, setImageMetadata] = useState<{ format: string; dimensions?: { width: number; height: number } } | null>(null);
   const [icoDataUrl, setIcoDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,10 +17,10 @@ export default function Home() {
       {/* Header */}
       <header className="py-6 md:py-8 px-4 text-center">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold mb-2" style={{color: '#36454F'}}>
-          SVG to ICO Converter
+          Image to ICO Converter
         </h1>
         <p className="text-base md:text-lg max-w-2xl mx-auto" style={{color: '#36454F', opacity: 0.8}}>
-          Convert your SVG files to ICO format instantly in your browser
+          Convert your images to ICO format instantly in your browser
         </p>
       </header>
 
@@ -28,16 +30,18 @@ export default function Home() {
           {/* Left Column - File Uploader */}
           <div className="space-y-6">
             <FileUploader
-              onFileSelect={(file, dataUrl) => {
-                setSvgFile(file);
-                setSvgDataUrl(dataUrl);
+              onFileSelect={(file, dataUrl, metadata) => {
+                setImageFile(file);
+                setImageDataUrl(dataUrl);
+                setImageMetadata(metadata || null);
                 setError(null);
                 setIcoDataUrl(null);
               }}
               onError={(errorMessage) => {
                 setError(errorMessage);
-                setSvgFile(null);
-                setSvgDataUrl(null);
+                setImageFile(null);
+                setImageDataUrl(null);
+                setImageMetadata(null);
                 setIcoDataUrl(null);
               }}
               error={error}
@@ -47,8 +51,10 @@ export default function Home() {
           {/* Right Column - Preview */}
           <div className="space-y-6">
             <Preview
-              svgDataUrl={svgDataUrl}
-              onConversionComplete={(icoUrl) => setIcoDataUrl(icoUrl)}
+              imageFile={imageFile}
+              imageDataUrl={imageDataUrl}
+              imageMetadata={imageMetadata}
+              onConversionComplete={(icoUrl: string) => setIcoDataUrl(icoUrl)}
               icoDataUrl={icoDataUrl}
             />
           </div>
@@ -64,6 +70,8 @@ export default function Home() {
           A tool by Defined by Jenna
         </p>
       </footer>
+      
+      <FormatSupport />
     </div>
   );
 }

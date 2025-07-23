@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { convertSvgToIco, downloadIcoFile } from '../utils/svgToIco';
+import { useEffect, useState, useCallback } from 'react';
+import { convertImageToIco, downloadIcoFile } from '../utils/imageToIco';
+import { loadImageToCanvas, loadSvgToCanvas, resizeImageWithHighQuality } from '../utils/canvasHelpers';
+import { detectImageFormat } from '../utils/imageFormats';
 
 interface PreviewProps {
-  svgDataUrl: string | null;
+  imageFile: File | null;
+  imageDataUrl: string | null;
+  imageMetadata: { format: string; dimensions?: { width: number; height: number } } | null;
   onConversionComplete: (icoUrl: string) => void;
   icoDataUrl: string | null;
 }
 
 const PREVIEW_SIZES = [256, 128, 64, 48, 32, 16] as const;
 
-export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }: PreviewProps) {
+export default function Preview({ imageFile, imageDataUrl, imageMetadata, onConversionComplete, icoDataUrl }: PreviewProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [previewImages, setPreviewImages] = useState<Record<number, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +23,7 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
   const [selectedSizes, setSelectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
 
   useEffect(() => {
-    if (!svgDataUrl) {
+    if (!imageFile || !imageDataUrl) {
       setPreviewImages({});
       setError(null);
       setHasConverted(false);
@@ -36,35 +40,65 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
       setError(null);
       
       try {
-        const svgContent = atob(svgDataUrl.split(',')[1]);
+        const formatDetection = detectImageFormat(imageFile);
+        if (!formatDetection) {
+          throw new Error('Unsupported image format');
+        }
+
         const previews: Record<number, string> = {};
         
-        // Generate preview images for each size with timeout
-        const previewPromises = PREVIEW_SIZES.map(async (size) => {
-          try {
-            const previewUrl = await Promise.race([
-              renderSvgToDataUrl(svgContent, size),
-              new Promise<null>((_, reject) => 
-                setTimeout(() => reject(new Error('Preview timeout')), 5000)
-              )
-            ]);
-            if (previewUrl) {
-              previews[size] = previewUrl;
+        if (formatDetection.formatKey === 'svg') {
+          // Handle SVG files
+          const svgContent = atob(imageDataUrl.split(',')[1]);
+          
+          // Generate preview images for each size with timeout
+          const previewPromises = PREVIEW_SIZES.map(async (size) => {
+            try {
+              const canvas = await Promise.race([
+                loadSvgToCanvas(svgContent, size),
+                new Promise<never>((_, reject) => 
+                  setTimeout(() => reject(new Error('Preview timeout')), 5000)
+                )
+              ]);
+              const dataUrl = canvas.toDataURL('image/png');
+              previews[size] = dataUrl;
+            } catch (err) {
+              console.warn(`Failed to generate ${size}x${size} preview:`, err);
             }
-          } catch (err) {
-            console.warn(`Failed to generate ${size}x${size} preview:`, err);
-          }
-        });
+          });
+          
+          await Promise.allSettled(previewPromises);
+        } else {
+          // Handle raster images
+          const sourceCanvas = await loadImageToCanvas(imageFile);
+          
+          // Generate preview images for each size
+          const previewPromises = PREVIEW_SIZES.map(async (size) => {
+            try {
+              let canvas: HTMLCanvasElement;
+              if (sourceCanvas.width === size && sourceCanvas.height === size) {
+                canvas = sourceCanvas;
+              } else {
+                canvas = resizeImageWithHighQuality(sourceCanvas, size, size);
+              }
+              const dataUrl = canvas.toDataURL('image/png');
+              previews[size] = dataUrl;
+            } catch (err) {
+              console.warn(`Failed to generate ${size}x${size} preview:`, err);
+            }
+          });
+          
+          await Promise.allSettled(previewPromises);
+        }
         
-        await Promise.allSettled(previewPromises);
         setPreviewImages(previews);
         
         // Convert to ICO with timeout using selected sizes
         try {
           const icoUrl = await Promise.race([
-            convertSvgToIco(svgDataUrl, Array.from(selectedSizes)),
+            convertImageToIco(imageFile, Array.from(selectedSizes)),
             new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Conversion timeout after 10 seconds')), 10000)
+              setTimeout(() => reject(new Error('Conversion timeout after 15 seconds')), 15000)
             )
           ]);
           
@@ -77,7 +111,7 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
         
       } catch (err) {
         console.error('Conversion error:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to convert SVG';
+        const errorMessage = err instanceof Error ? err.message : 'Failed to convert image';
         setError(`Conversion failed: ${errorMessage}. Please try a different file.`);
         onConversionComplete(''); // Clear any previous conversion
         setHasConverted(false);
@@ -87,71 +121,15 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
     };
 
     generatePreviews();
-  }, [svgDataUrl, selectedSizes, hasConverted, icoDataUrl]); // Re-run when sizes change
+  }, [imageFile, imageDataUrl, selectedSizes, hasConverted, icoDataUrl, onConversionComplete]); // Re-run when sizes change
 
-  const renderSvgToDataUrl = (svgContent: string, size: number): Promise<string | null> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        resolve(null);
-        return;
-      }
-      
-      canvas.width = size;
-      canvas.height = size;
-      
-      // Set a timeout to prevent hanging
-      const timeout = setTimeout(() => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Preview rendering timeout'));
-      }, 3000); // 3 second timeout for previews
-      
-      const img = new Image();
-      let url: string;
-      
-      try {
-        const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-        url = URL.createObjectURL(svgBlob);
-      } catch (error) {
-        clearTimeout(timeout);
-        reject(error);
-        return;
-      }
-      
-      img.onload = () => {
-        try {
-          clearTimeout(timeout);
-          ctx.clearRect(0, 0, size, size);
-          ctx.drawImage(img, 0, 0, size, size);
-          
-          const dataUrl = canvas.toDataURL('image/png');
-          URL.revokeObjectURL(url);
-          resolve(dataUrl);
-        } catch (error) {
-          URL.revokeObjectURL(url);
-          reject(error);
-        }
-      };
-      
-      img.onerror = () => {
-        clearTimeout(timeout);
-        URL.revokeObjectURL(url);
-        reject(new Error('Failed to load SVG for preview'));
-      };
-      
-      img.src = url;
-    });
-  };
-
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (icoDataUrl) {
       downloadIcoFile(icoDataUrl);
     }
-  };
+  }, [icoDataUrl]);
 
-  if (!svgDataUrl) {
+  if (!imageFile || !imageDataUrl) {
     return (
       <div className="space-y-6">
         <div className="text-center py-16 bg-champagne-gold/10 rounded-lg border-2 border-dashed border-mocha-mousse/30">
@@ -190,6 +168,14 @@ export default function Preview({ svgDataUrl, onConversionComplete, icoDataUrl }
       <div className="bg-white rounded-lg border border-mocha-mousse/20 overflow-hidden">
         <div className="p-6 bg-champagne-gold/20 border-b border-mocha-mousse/20">
           <h3 className="text-lg font-semibold text-charcoal-gray">Preview</h3>
+          {imageMetadata && (
+            <p className="text-sm text-charcoal-gray/70 mt-1">
+              {imageMetadata.format}
+              {imageMetadata.dimensions && 
+                ` • ${imageMetadata.dimensions.width} × ${imageMetadata.dimensions.height} pixels`
+              }
+            </p>
+          )}
           {isConverting && (
             <p className="text-sm text-charcoal-gray/70 mt-1">Converting...</p>
           )}
