@@ -39,6 +39,8 @@
   "author": "Fadi Al-Zuabi",
   "license": "MIT",
   "dependencies": {
+    "@types/jszip": "^3.4.0",
+    "jszip": "^3.10.1",
     "next": "15.4.3",
     "react": "19.1.0",
     "react-dom": "19.1.0"
@@ -52,6 +54,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.3",
+    "playwright": "^1.54.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
