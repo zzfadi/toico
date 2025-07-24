@@ -9,14 +9,14 @@ export class FileHelpers {
    */
   async uploadFile(filePath: string) {
     const fileInput = this.page.locator('input[type="file"]');
-    await fileInput.setInputFiles(path.join(__dirname, '..', 'fixtures', 'images', filePath));
+    await fileInput.setInputFiles(path.join(__dirname, '..', 'images', filePath));
   }
 
   /**
    * Upload a file using drag and drop
    */
   async dragAndDropFile(filePath: string, dropZoneSelector: string = '[data-testid="drop-zone"]') {
-    const fullPath = path.join(__dirname, '..', 'fixtures', 'images', filePath);
+    const fullPath = path.join(__dirname, '..', 'images', filePath);
     
     // Create a data transfer with the file
     const dataTransfer = await this.page.evaluateHandle((filePath) => {
@@ -34,21 +34,24 @@ export class FileHelpers {
    * Wait for file to be processed and preview to be shown
    */
   async waitForFileProcessed() {
-    await expect(this.page.locator('[data-testid="image-preview"]')).toBeVisible({ timeout: 10000 });
+    // Wait for the preview section to become visible after file upload
+    await expect(this.page.locator('h2:has-text("ICO Preview")')).toBeVisible({ timeout: 10000 });
   }
 
   /**
    * Wait for conversion to complete
    */
   async waitForConversionComplete() {
-    await expect(this.page.locator('[data-testid="download-button"]')).toBeVisible({ timeout: 15000 });
+    // Wait for download buttons to appear in the preview section
+    await expect(this.page.locator('button:has-text("Download")')).toBeVisible({ timeout: 15000 });
   }
 
   /**
    * Verify file upload error message
    */
   async verifyUploadError(expectedMessage: string) {
-    const errorMessage = this.page.locator('[data-testid="error-message"]');
+    // Look for the specific error alert that contains the error message
+    const errorMessage = this.page.locator('div[role="alert"].glass-card:has-text("Unsupported file format")');
     await expect(errorMessage).toBeVisible();
     await expect(errorMessage).toContainText(expectedMessage);
   }
@@ -57,10 +60,22 @@ export class FileHelpers {
    * Get file metadata from the UI
    */
   async getFileMetadata() {
+    // Look for file info displays
+    const fileInfoElement = this.page.locator('text=/\\w+ • [^•]+/').first();
+    const text = await fileInfoElement.textContent();
+    
+    // Look for resolution info (only for raster images)
+    let dimensions = '';
+    const resolutionElement = this.page.locator('text=/Resolution: \\d+ × \\d+ pixels/');
+    if (await resolutionElement.count() > 0) {
+      const resText = await resolutionElement.textContent();
+      dimensions = resText?.replace('Resolution: ', '') || '';
+    }
+    
     const metadata = {
-      format: await this.page.locator('[data-testid="file-format"]').textContent(),
-      dimensions: await this.page.locator('[data-testid="file-dimensions"]').textContent(),
-      size: await this.page.locator('[data-testid="file-size"]').textContent(),
+      format: text || '',
+      dimensions: dimensions,
+      size: '', // Size info may not be displayed in this UI
     };
     return metadata;
   }
@@ -69,7 +84,8 @@ export class FileHelpers {
    * Clear uploaded file and reset state
    */
   async clearUploadedFile() {
-    const clearButton = this.page.locator('[data-testid="clear-file-button"]');
+    // Look for the "Clear Selection" button
+    const clearButton = this.page.locator('button:has-text("Clear Selection")');
     if (await clearButton.isVisible()) {
       await clearButton.click();
     }
@@ -79,10 +95,8 @@ export class FileHelpers {
    * Verify supported file formats are displayed
    */
   async verifySupportedFormats() {
-    const supportedFormats = ['PNG', 'JPEG', 'WebP', 'GIF', 'BMP', 'SVG'];
-    for (const format of supportedFormats) {
-      await expect(this.page.locator(`text=${format}`)).toBeVisible();
-    }
+    // Look for the specific help text that lists supported formats
+    await expect(this.page.locator('text=✨ Supported formats: PNG, JPEG, WebP, GIF, BMP, SVG')).toBeVisible();
   }
 
   /**

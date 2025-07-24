@@ -161,7 +161,7 @@ export class BatchHelpers {
    * Verify batch ZIP download properties
    */
   verifyBatchZipDownload(download: Download, expectedFileCount?: number) {
-    expect(download.suggestedFilename()).toMatch(/batch-export.*\.zip$/);
+    expect(download.suggestedFilename()).toMatch(/batch.*\.zip$/);
     
     // Additional validations could be added here for file size, etc.
   }

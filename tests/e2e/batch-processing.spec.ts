@@ -156,8 +156,8 @@ test.describe('Batch Processing Tests', () => {
     await batchHelpers.switchToBatchMode();
     
     // Verify privacy messaging
-    await expect(page.getByText('100% Private')).toBeVisible();
-    await expect(page.getByText(/processing happens locally/i)).toBeVisible();
+    await expect(page.getByText('100% Private').first()).toBeVisible();
+    await expect(page.getByText(/processing happens locally/i).first()).toBeVisible();
     
     // Monitor network requests to ensure no file uploads
     let hasFileUploads = false;
