@@ -1,5 +1,8 @@
-// Export Presets System - GOD MODE ACTIVATED!
-// Professional export presets for iOS, Android, and Web platforms
+/**
+ * Export Presets System
+ * Provides predefined export presets for iOS, Android, and Web platforms.
+ * These presets include configurations for sizes, formats, and folder structures.
+ */
 
 export interface ExportPreset {
   id: string;
