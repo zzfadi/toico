@@ -3,7 +3,20 @@
   "version": "2.0.0",
   "description": "Privacy-first web app that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format entirely in your browser",
   "private": true,
-  "keywords": ["ico", "converter", "image", "favicon", "png", "jpeg", "webp", "gif", "bmp", "svg", "privacy-first", "client-side"],
+  "keywords": [
+    "ico",
+    "converter",
+    "image",
+    "favicon",
+    "png",
+    "jpeg",
+    "webp",
+    "gif",
+    "bmp",
+    "svg",
+    "privacy-first",
+    "client-side"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,19 +34,21 @@
   "author": "Fadi Al-Zuabi",
   "license": "MIT",
   "dependencies": {
+    "@types/jszip": "^3.4.0",
+    "jszip": "^3.10.1",
+    "next": "15.4.3",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.4.3"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.3",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
