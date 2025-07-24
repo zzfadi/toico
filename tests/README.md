@@ -4,17 +4,25 @@ This directory contains end-to-end tests for the Universal Image to ICO Converte
 
 ## Test Structure
 
-- `basic.spec.ts` - Basic application functionality and page load tests
+- `basic.spec.ts` - Basic application functionality and page load tests (updated for new features)
 - `upload.spec.ts` - File upload functionality tests  
 - `conversion.spec.ts` - Image to ICO conversion tests
 - `ui-interactions.spec.ts` - UI responsiveness and interaction tests
 - `error-handling.spec.ts` - Error scenarios and edge cases
 - `performance.spec.ts` - Performance and load time tests
+- `batch-processing.spec.ts` - **NEW:** Batch file processing functionality tests
+- `export-presets.spec.ts` - **NEW:** Export presets system tests (iOS, Android, Web, Desktop)
+- `ui-mode-switching.spec.ts` - **NEW:** Segmented control and mode switching tests
+- `feature-integration.spec.ts` - **NEW:** Integration tests across all three modes
 
 ## Test Fixtures
 
 - `fixtures/images/` - Sample image files for testing different formats
 - `fixtures/helpers/` - Test helper utilities for common operations
+  - `file-helpers.ts` - File upload and validation helpers (updated for batch processing)
+  - `conversion-helpers.ts` - Image conversion test utilities
+  - `preset-helpers.ts` - **NEW:** Export presets testing utilities
+  - `batch-helpers.ts` - **NEW:** Batch processing testing utilities
 
 ## Running Tests
 

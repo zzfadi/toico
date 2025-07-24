@@ -16,6 +16,11 @@ test.describe('Basic Application Tests', () => {
     await expect(page.getByText('PNG')).toBeVisible();
     await expect(page.getByText('JPEG')).toBeVisible();
     await expect(page.getByText('SVG')).toBeVisible();
+    
+    // Check for new mode switching interface
+    await expect(page.getByText('Single File')).toBeVisible();
+    await expect(page.getByText('Batch Processing')).toBeVisible();
+    await expect(page.getByText('Export Presets')).toBeVisible();
   });
 
   test('should have accessible file input', async ({ page }) => {
@@ -34,15 +39,29 @@ test.describe('Basic Application Tests', () => {
     // Check that upload area is present
     const uploadArea = page.locator('input[type="file"]').locator('..');
     await expect(uploadArea).toBeVisible();
+    
+    // Check for new segmented control
+    await expect(page.getByText('Single File')).toBeVisible();
+    
+    // Check for processing mode descriptions
+    await expect(page.getByText('Convert one image at a time with detailed preview')).toBeVisible();
   });
 
   test('should show upload instructions', async ({ page }) => {
-    // Check for upload instructions
+    // Check for upload instructions in single file mode
     await expect(page.getByText(/Drag/)).toBeVisible();
     await expect(page.getByText(/Browse/)).toBeVisible();
     
     // Check for supported formats information
     await expect(page.getByText(/Supported formats/)).toBeVisible();
+    
+    // Switch to batch mode and check batch instructions
+    await page.getByText('Batch Processing').click();
+    await expect(page.getByText('Drop multiple images and convert them all at once!')).toBeVisible();
+    
+    // Switch to presets mode and check preset instructions
+    await page.getByText('Export Presets').click();
+    await expect(page.getByText('One-click export for platform-specific icon packages')).toBeVisible();
   });
 
   test('should display brand information', async ({ page }) => {
