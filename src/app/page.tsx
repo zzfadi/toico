@@ -18,7 +18,7 @@ export default function Home() {
   const [currentFormat, setCurrentFormat] = useState<OutputFormat>('ico');
   const [error, setError] = useState<string | null>(null);
   const [processingMode, setProcessingMode] = useState<'single' | 'batch' | 'presets'>('single');
-  const [, setBatchResults] = useState<BatchFileInfo[]>([]);
+// Removed unused state setter for batch results
   const [selectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
   const [svgSelectedSizes] = useState<Set<number>>(new Set([128, 64, 32]));
   
