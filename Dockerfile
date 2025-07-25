@@ -3,7 +3,8 @@ FROM node:18-alpine AS deps
 WORKDIR /app
 
 # Copy package.json and lock file
-COPY package.json package-lock.json* ./
+COPY package.json ./
+COPY package-lock.json ./ || echo "No package-lock.json file found, skipping."
 
 # Install dependencies
 RUN npm install
