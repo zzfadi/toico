@@ -20,6 +20,6 @@ steps:
       - 'us-central1'
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated'
+# 23:       - '--allow-unauthenticated'
 images:
   - 'gcr.io/$PROJECT_ID/toico:$COMMIT_SHA'
