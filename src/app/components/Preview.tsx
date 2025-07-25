@@ -426,6 +426,7 @@ export default function Preview({
                   <div className="flex items-center justify-center mb-3 h-16">
                     {previewImages[size] ? (
                       <div className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={previewImages[size]}
                           alt={`${size}x${size} preview`}
@@ -508,6 +509,7 @@ export default function Preview({
                   <div className="flex items-center justify-center mb-3 h-16">
                     {previewImages[size] ? (
                       <div className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={previewImages[size]}
                           alt={`${size}x${size} preview`}

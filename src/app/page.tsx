@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import FileUploader from './components/FileUploader';
-import BatchFileUploader, { BatchFileInfo } from './components/BatchFileUploader';
+import BatchFileUploader from './components/BatchFileUploader';
 import Preview, { OutputFormat } from './components/Preview';
 import FormatSupport from './components/FormatSupport';
 import SegmentedControl from './components/SegmentedControl';
@@ -18,8 +18,7 @@ export default function Home() {
   const [currentFormat, setCurrentFormat] = useState<OutputFormat>('ico');
   const [error, setError] = useState<string | null>(null);
   const [processingMode, setProcessingMode] = useState<'single' | 'batch' | 'presets'>('single');
-// Removed unused state setter for batch results
-  const [selectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
+const [selectedSizes] = useState<Set<number>>(new Set([256, 64, 32, 16]));
   const [svgSelectedSizes] = useState<Set<number>>(new Set([128, 64, 32]));
   
   // Preset export states
@@ -180,7 +179,6 @@ export default function Home() {
                 <div className="glass-card rounded-3xl p-8 md:p-10">
                   <BatchFileUploader
                     onBatchComplete={(results) => {
-                      setBatchResults(results);
                       console.log('Batch processing completed:', results.length, 'files');
                     }}
                     outputFormat={currentFormat}
