@@ -23,7 +23,7 @@ steps:
       - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_REGION}'
       - '--platform=managed'
-      - '--allow-unauthenticated' # Allows public access
+      - '--no-allow-unauthenticated' # Enforces authentication
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
