@@ -25,7 +25,7 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
+# node_modules is not copied from the builder stage as production dependencies are installed directly
 COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
