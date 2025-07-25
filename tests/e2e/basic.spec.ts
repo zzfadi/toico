@@ -6,8 +6,9 @@ test.describe('Basic Application Tests', () => {
   });
 
   test('should load the main page', async ({ page }) => {
-    // Check that the main heading is visible
-    await expect(page.locator('h1')).toContainText('Premium Image toICO & SVG Converter');
+    // Check that the main heading is visible - it's split across lines
+    await expect(page.locator('h1')).toContainText('Premium Image to');
+    await expect(page.locator('h1')).toContainText('ICO & SVG Converter');
     
     // Check that upload section is present
     await expect(page.locator('input[type="file"]')).toBeVisible();
@@ -17,10 +18,10 @@ test.describe('Basic Application Tests', () => {
     await expect(page.getByText('JPEG').first()).toBeVisible();
     await expect(page.getByText('SVG').first()).toBeVisible();
     
-    // Check for new mode switching interface
-    await expect(page.getByText('Single File')).toBeVisible();
-    await expect(page.getByText('Batch Processing')).toBeVisible();
-    await expect(page.getByText('Export Presets')).toBeVisible();
+    // Check for new mode switching interface - use role-based selectors
+    await expect(page.getByRole('button', { name: /Single File/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Batch Processing/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Export Presets/ })).toBeVisible();
   });
 
   test('should have accessible file input', async ({ page }) => {
@@ -55,12 +56,12 @@ test.describe('Basic Application Tests', () => {
     // Check for supported formats information
     await expect(page.getByText(/Supported formats/)).toBeVisible();
     
-    // Switch to batch mode and check batch instructions
-    await page.getByText('Batch Processing').click();
+    // Switch to batch mode and check batch instructions - use button role for more reliable selection
+    await page.getByRole('button', { name: /Batch Processing/ }).click();
     await expect(page.getByText('Drop multiple images and convert them all at once!')).toBeVisible();
     
     // Switch to presets mode and check preset instructions
-    await page.getByText('Export Presets').click();
+    await page.getByRole('button', { name: /Export Presets/ }).click();
     await expect(page.getByText('One-click export for platform-specific icon packages')).toBeVisible();
   });
 
