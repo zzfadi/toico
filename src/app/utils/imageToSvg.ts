@@ -78,10 +78,9 @@ export async function convertImageToSvg(
  * Process SVG files for optimization and multi-size generation
  */
 async function processSvgToSvg(
-  file: File, 
-  sizes: number[], 
-  // @ts-expect-error - options is not used in this function
-  _options: SvgConversionOptions
+  file: File,
+  sizes: number[],
+  options: SvgConversionOptions = {}
 ): Promise<Array<{ size: number; element: string; viewBox: string }>> {
   const svgContent = await readFileAsText(file);
   const elements: Array<{ size: number; element: string; viewBox: string }> = [];
@@ -331,7 +330,6 @@ function readFileAsText(file: File): Promise<string> {
 export async function convertImageToIndividualSvgs(
   file: File, 
   selectedSizes: number[], 
-  // @ts-expect-error - options is not used in this function
   _options: SvgConversionOptions = {}
 ): Promise<Array<{ size: number; url: string; filename: string }>> {
   try {
