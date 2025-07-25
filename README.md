@@ -1,10 +1,19 @@
-# Universal Image to ICO Converter
+# Universal Image Converter
 
-A privacy-first, client-side web application that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format instantly in your browser. Built with Next.js 15 and designed with the "Defined by Jenna" brand aesthetic.
+A privacy-first, client-side web application that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to both ICO and SVG formats with three powerful processing modes. Built with Next.js 15 and designed with the "Defined by Jenna" brand aesthetic.
 
 ## ✨ Features
 
-### 🖼️ **Multi-Format Support**
+### 🚀 **Three Processing Modes**
+- **🎯 Single File Mode** - Traditional one-at-a-time conversion with real-time preview
+- **🔥 Batch Processing Mode** - Multi-file upload with parallel processing and ZIP download
+- **🎨 Export Presets Mode** - Platform-specific icon packages (iOS, Android, Web, Windows)
+
+### 📊 **Dual Output Formats**
+- **ICO Format** - Traditional icon files with multiple sizes (16×16 to 256×256)
+- **SVG Format** - Scalable vector graphics for modern applications
+
+### 🖼️ **Multi-Format Input Support**
 - **PNG** - Perfect for logos with transparency
 - **JPEG** - Great for photos (white background added automatically)
 - **WebP** - Modern web format with transparency support
@@ -12,23 +21,33 @@ A privacy-first, client-side web application that converts multiple image format
 - **BMP** - Classic bitmap format
 - **SVG** - Vector graphics (rasterized for optimal quality)
 
-### 🎯 **Smart Processing**
-- **Multi-size ICO generation** - Creates 6 sizes: 16×16, 32×32, 48×48, 64×64, 128×128, 256×256
-- **High-quality resampling** - Preserves image quality with intelligent scaling
-- **Transparency handling** - Automatic white background for formats that don't support transparency
-- **Size optimization** - Pixelated rendering for small icons (≤32px) for crisp results
+### 🎯 **Professional Export Presets**
+- **iOS App Icons** - Complete iOS icon package with all required sizes
+- **Android App Icons** - Android adaptive and legacy icon sets
+- **Web Favicons** - Web-optimized favicon packages
+- **Windows Desktop** - Windows application icon sets
 
-### 🔒 **Privacy-First**
+### 🔧 **Advanced Processing**
+- **Batch Operations** - Process multiple files simultaneously with progress tracking
+- **High-quality resampling** - Preserves image quality with intelligent scaling
+- **Transparency handling** - Automatic white background for formats without transparency
+- **Web Worker Processing** - Background processing for smooth performance
+- **ZIP Packaging** - Organized downloads with proper file structure
+
+### 🔒 **Privacy-First Architecture**
 - **100% client-side processing** - Your images never leave your browser
-- **No server uploads** - All conversion happens locally using Canvas API
+- **No server uploads** - All conversion happens locally using Canvas API and Web Workers
 - **Instant processing** - No waiting for server response times
+- **No data collection** - Complete anonymity
 
 ### 💎 **Enhanced User Experience**
-- **Drag & drop interface** - Simply drag images onto the upload area
+- **Mode Switching** - Intuitive segmented control for different workflows
+- **Drag & drop interface** - Multi-file drag and drop support
 - **Format detection** - Automatically detects and displays image format and dimensions
-- **Real-time preview** - See how your icon will look at each size
-- **Selective sizing** - Choose which ICO sizes to include
+- **Real-time preview** - See how your icons will look at each size
+- **Progress tracking** - Individual file progress in batch operations
 - **Format-specific guidance** - Helpful tips for each image format
+- **Responsive design** - Works seamlessly on desktop and mobile
 
 ## 🚀 Getting Started
 
@@ -80,20 +99,30 @@ npm start
 src/
 ├── app/
 │   ├── components/
-│   │   ├── FileUploader.tsx      # Multi-format file upload with validation
-│   │   ├── Preview.tsx           # Image preview and ICO conversion
-│   │   ├── FormatSupport.tsx     # Format information panel
-│   │   └── DebugConverter.tsx    # Development testing utilities
+│   │   ├── FileUploader.tsx         # Single-file upload with validation
+│   │   ├── BatchFileUploader.tsx    # Multi-file batch uploader
+│   │   ├── Preview.tsx              # Interactive preview with format switching
+│   │   ├── ExportPresets.tsx        # Platform preset selection
+│   │   ├── SegmentedControl.tsx     # Mode switching control
+│   │   └── FormatSupport.tsx        # Format information panel
 │   ├── utils/
-│   │   ├── imageToIco.ts         # Universal image to ICO conversion
-│   │   ├── imageFormats.ts       # Format detection and validation
-│   │   ├── canvasHelpers.ts      # High-quality image processing
-│   │   └── workerManager.ts      # Web Worker management (future)
-│   ├── globals.css               # Brand colors and styling
-│   ├── layout.tsx                # App layout with metadata
-│   └── page.tsx                  # Main application component
+│   │   ├── imageToIco.ts            # Universal image to ICO conversion
+│   │   ├── imageToSvg.ts            # SVG conversion utility
+│   │   ├── imageFormats.ts          # Format detection and validation
+│   │   ├── canvasHelpers.ts         # High-quality image processing
+│   │   ├── exportPresets.ts         # Platform preset definitions
+│   │   ├── presetExporter.ts        # Batch preset export with ZIP
+│   │   ├── batchWorkerManager.ts    # Batch processing coordination
+│   │   └── workerManager.ts         # Web Worker management
+│   ├── globals.css                  # Brand colors and styling
+│   ├── layout.tsx                   # App layout with metadata
+│   └── page.tsx                     # Main application with multi-mode state
+├── tests/
+│   ├── e2e/                         # E2E test suites (154 tests)
+│   └── fixtures/                    # Test helpers and sample images
 └── public/
-    └── image-worker.js           # Web Worker for image processing
+    ├── image-worker.js              # Image processing Web Worker
+    └── batch-worker.js              # Batch processing Web Worker
 ```
 
 ## 🎨 Supported Image Formats
@@ -136,10 +165,14 @@ src/
 ### Available Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server  
-npm run lint         # Run ESLint
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server  
+npm run lint             # Run ESLint
+npm run test:e2e         # Run E2E tests (Playwright)
+npm run test:e2e:ui      # Run E2E tests with UI
+npm run test:e2e:debug   # Debug E2E tests
+npm run test:e2e:report  # Show E2E test report
 ```
 
 ### Code Quality
@@ -147,6 +180,9 @@ npm run lint         # Run ESLint
 - ESLint for code quality
 - Comprehensive error handling
 - Performance monitoring with timeouts
+- Comprehensive E2E testing with Playwright
+- Multi-browser and mobile testing
+- 154 test cases across all features
 
 ## 📱 Browser Support
 

@@ -2,11 +2,20 @@
 
 ## Project Architecture
 
-This is a client-side Next.js 15 app that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format in the browser. The app follows a three-component state flow pattern:
+This is a client-side Next.js 15 app that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to both ICO and SVG formats with three processing modes:
 
-1. **`page.tsx`**: Central state manager coordinating file upload → preview → conversion
-2. **`FileUploader`**: Drag-and-drop with multi-format validation (MIME type detection + size limits)  
-3. **`Preview`**: Generates multi-size previews and triggers format-specific ICO conversion
+**Three Processing Modes:**
+1. **Single File**: Traditional one-at-a-time conversion with real-time preview
+2. **Batch Processing**: Multi-file upload with parallel processing and ZIP download
+3. **Export Presets**: Platform-specific icon packages (iOS, Android, Web, Windows)
+
+**Core Architecture:**
+- **`page.tsx`**: Central state manager with complex multi-mode state handling
+- **`FileUploader`**: Single-file drag-and-drop with multi-format validation
+- **`BatchFileUploader`**: Multi-file uploader with progress tracking
+- **`Preview`**: Interactive preview with format switching (ICO/SVG)
+- **`ExportPresets`**: Platform preset selection interface
+- **`SegmentedControl`**: Mode switching control with accessibility
 
 ## Critical Canvas Timeout Pattern
 
@@ -33,30 +42,49 @@ Uses "Defined by Jenna" brand colors defined in `globals.css` as CSS variables:
 
 **Styling Convention**: Components use inline `style` props with hex colors instead of Tailwind color classes for brand consistency.
 
-## ICO File Format Implementation
+## Multi-Format Conversion Implementation
 
-The `imageToIco.ts` utility creates proper multi-size ICO files with binary headers, supporting all image formats with format-specific processing:
-
-- Maintain the ICO_SIZES array: `[16, 32, 48, 64, 128, 256]`
-- The `createIcoFile()` function writes ICO directory headers + PNG data
-- Size 256 is encoded as 0 in ICO headers (ICO format limitation)
-- **Format-specific processing**: SVG rasterized per-size, raster images use high-quality resampling
+**ICO Conversion (`imageToIco.ts`)**:
+- Creates proper multi-size ICO files with binary headers for all image formats
+- ICO_SIZES array: `[16, 32, 48, 64, 128, 256]` (size 256 encoded as 0 in ICO headers)
+- Format-specific processing: SVG rasterized per-size, raster images use high-quality resampling
 - **Transparency handling**: Automatic white background for JPEG/BMP formats
+
+**SVG Conversion (`imageToSvg.ts`)**:
+- Converts images to scalable SVG format with intelligent sizing
+- Preserves transparency for supported formats
+- Optimized for different output sizes (32, 64, 128px typically)
+
+**Export Presets (`presetExporter.ts`)**:
+- Platform-specific export with predefined size sets and naming conventions
+- ZIP packaging with proper folder structures
+- Progress tracking for batch operations
+- Support for both ICO and PNG formats based on platform requirements
 
 ## State Management Pattern
 
-Use the existing unidirectional state flow in `page.tsx`:
-- File selection clears previous conversion state  
-- Error state resets all downstream state (image + ICO)
-- Successful conversion prevents re-conversion until new file upload
-- **Enhanced metadata**: Format detection, dimensions, and processing hints flow through components
+**Complex Multi-Mode State** in `page.tsx`:
+
+**Core Single-File State**: `imageFile`, `imageDataUrl`, `imageMetadata`, `convertedUrl`, `error`
+**Mode Management**: `processingMode` ('single' | 'batch' | 'presets'), `currentFormat` ('ico' | 'svg')
+**Preset Export State**: `selectedPreset`, `isExportingPreset`, `presetProgress`, `presetExportResult`
+
+**State Flow Patterns**:
+- **Single**: FileUploader → Preview → Download
+- **Batch**: BatchFileUploader → Progress Tracking → ZIP Download  
+- **Presets**: PresetSelector → FileUploader → Automated Export → Download
+
+File selection clears previous conversion state across all modes. Error states reset downstream state appropriately for each mode.
 
 ## Development Workflow
 
 ```bash
-npm run dev           # Development server (standard Next.js)
-npm run build         # Production build  
-npm run lint          # ESLint validation
+npm run dev              # Development server (standard Next.js)
+npm run build            # Production build  
+npm run lint             # ESLint validation
+npm run test:e2e         # Run E2E tests (Playwright)
+npm run test:e2e:ui      # Run E2E tests with UI
+npm run test:e2e:debug   # Debug E2E tests
 ```
 
 Local server: http://localhost:3000 (or next available port)
@@ -70,4 +98,15 @@ Local server: http://localhost:3000 (or next available port)
 
 ## Privacy-First Architecture
 
-All processing happens client-side using File API, Canvas API, and Blob URLs. No server endpoints exist for file processing - maintain this architecture for user privacy.
+All processing happens client-side using File API, Canvas API, Web Workers, and Blob URLs. No server endpoints exist for file processing - maintain this architecture for user privacy across all three processing modes.
+
+## Testing Framework
+
+**Comprehensive E2E Testing** with Playwright covering all three modes:
+- **154 unique test cases** across 10 test files
+- **Multi-browser testing**: Chrome, Firefox, Safari, Edge, Mobile Chrome/Safari
+- **Key test areas**: Basic functionality, Upload, Conversion, Batch processing, Export presets, UI interactions, Error handling, Performance
+- **Test utilities**: Helper functions in `tests/fixtures/helpers/` for common operations
+- **CI Integration**: Automated testing with GitHub Actions
+
+See `docs/testing/E2E_TESTING_GUIDE.md` for comprehensive testing documentation.

@@ -5,6 +5,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-01-25
+
+### 🚀 Major Release: Multi-Mode Processing & SVG Support
+
+This release introduces three distinct processing modes and adds SVG output format support, making this a comprehensive image conversion platform.
+
+### ✨ Added
+- **Three Processing Modes**:
+  - **Single File Mode**: Traditional one-at-a-time conversion with real-time preview
+  - **Batch Processing Mode**: Multi-file upload with parallel processing and ZIP download
+  - **Export Presets Mode**: Platform-specific icon packages (iOS, Android, Web, Windows)
+- **SVG Output Format**: Convert any image format to scalable SVG with intelligent sizing
+- **Batch Processing System**: 
+  - Multi-file drag-and-drop uploader (`BatchFileUploader.tsx`)
+  - Parallel processing with progress tracking
+  - ZIP package generation with organized file structure
+  - Individual file status monitoring and error handling
+- **Export Presets System**:
+  - Platform-specific presets with predefined size sets
+  - Professional naming conventions and folder structures
+  - iOS, Android, Web, and Windows Desktop presets
+  - Automated preset export with progress tracking
+- **Enhanced UI Components**:
+  - `SegmentedControl.tsx`: Accessible mode switching interface
+  - `ExportPresets.tsx`: Platform preset selection with filtering
+  - Enhanced mode switching with animations and descriptions
+- **New Conversion Utilities**:
+  - `imageToSvg.ts`: SVG conversion with format-specific optimization
+  - `presetExporter.ts`: Batch preset export with ZIP packaging
+  - `batchWorkerManager.ts`: Web Worker coordination for batch processing
+  - `exportPresets.ts`: Platform preset definitions and configuration
+
+### 🔄 Changed
+- **Application Architecture**: Evolved from single-mode to multi-mode processing
+- **State Management**: Complex state handling for three distinct processing workflows
+- **File Upload System**: Enhanced to support both single and batch file operations
+- **Preview Component**: Added format switching between ICO and SVG outputs
+- **User Interface**: Completely redesigned with mode switching and enhanced navigation
+- **Brand Positioning**: Expanded from "ICO Converter" to "Universal Image Converter"
+
+### 🏗️ Architecture Improvements
+- **Multi-Mode State Management**: Sophisticated state handling across processing modes
+- **Web Worker Integration**: Background processing for batch operations
+- **ZIP Generation**: Client-side ZIP creation for batch downloads
+- **Progress Tracking**: Real-time progress monitoring for batch and preset operations
+- **Memory Optimization**: Enhanced cleanup and resource management
+- **Error Handling**: Mode-specific error handling with appropriate recovery flows
+
+### 🧪 Testing Enhancements
+- **Comprehensive E2E Testing**: 154 test cases across 10 test files
+- **Multi-Browser Testing**: Chrome, Firefox, Safari, Edge, Mobile Chrome/Safari
+- **New Test Suites**:
+  - `batch-processing.spec.ts`: Batch processing functionality
+  - `export-presets.spec.ts`: Platform preset export testing
+  - `ui-mode-switching.spec.ts`: Mode switching and navigation
+  - `feature-integration.spec.ts`: Cross-feature compatibility testing
+- **Enhanced Test Utilities**: Helper functions for batch and preset operations
+- **Performance Testing**: Timeout handling and memory usage validation
+
+### 📚 Documentation Updates
+- **Comprehensive Testing Guide**: `E2E_TESTING_GUIDE.md` with detailed testing documentation
+- **Updated README**: Reflects all new features and processing modes
+- **Enhanced CLAUDE.md**: Complete architecture documentation for AI tools
+- **Updated Copilot Instructions**: Multi-mode development guidance
+
+### 🎨 User Experience Improvements
+- **Mode Selection**: Intuitive segmented control with clear descriptions
+- **Progressive Disclosure**: Features revealed based on selected mode
+- **Enhanced Feedback**: Progress tracking for long-running operations
+- **Accessibility**: Keyboard navigation and screen reader support across all modes
+- **Responsive Design**: Mobile-optimized interface for all processing modes
+
 ## [2.0.0] - 2024-07-23
 
 ### 🚀 Major Release: Universal Image to ICO Converter
