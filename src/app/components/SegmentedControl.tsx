@@ -43,7 +43,7 @@ export default function SegmentedControl({
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       });
     }
-  }, [value, options.length, selectedIndex]);
+  }, [value, options, selectedIndex]);
 
   // Initialize animation on mount
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function SegmentedControl({
         }));
       }, 100);
     }
-  }, []);
+  }, [options, value]);
 
   return (
     <div className={`relative ${className}`}>
