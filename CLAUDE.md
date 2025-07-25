@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **Universal Image to ICO Converter**, a premium single-page Next.js application that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to multi-size ICO format entirely client-side. The app features an advanced glassmorphism design system built for the "Defined by Jenna" permanent makeup artist brand, emphasizing privacy-first technology and professional aesthetics.
+This is **Universal Image to ICO Converter**, a premium Next.js application that converts multiple image formats (PNG, JPEG, WebP, GIF, BMP, SVG) to both ICO and SVG formats with three processing modes: single file conversion, batch processing, and export presets for platforms like iOS, Android, and Web. All processing happens entirely client-side with an advanced glassmorphism design system built for the "Defined by Jenna" permanent makeup artist brand.
 
 ## Development Commands
 
@@ -20,29 +20,71 @@ npm start
 
 # Run linting
 npm run lint
+
+# Run E2E tests
+npm run test:e2e
+
+# Run E2E tests with UI
+npm run test:e2e:ui
+
+# Debug E2E tests
+npm run test:e2e:debug
+
+# Show E2E test report
+npm run test:e2e:report
+
+# Install Playwright browsers
+npm run test:e2e:install
 ```
 
 The dev server runs on http://localhost:3000 (or next available port)
 
 ## Architecture
 
-### Core Application Flow
-1. **FileUploader** component handles drag-and-drop upload with multi-format validation (PNG, JPEG, WebP, GIF, BMP, SVG)
-2. **Preview** component generates previews at multiple sizes (256x256, 128x128, 64x64, 48x48, 32x32, 16x16) for any image format
-3. **imageToIco utility** converts any supported image format to downloadable ICO using Canvas API with format-specific processing
-4. All processing happens client-side for complete privacy
+### Core Application Architecture
+
+The application has evolved into a sophisticated multi-mode converter with three distinct processing workflows:
+
+**1. Single File Mode:**
+- FileUploader → Preview → Download (traditional one-at-a-time conversion)
+- Real-time preview with selectable icon sizes
+- ICO or SVG output formats
+
+**2. Batch Processing Mode:**
+- BatchFileUploader handles multiple files simultaneously
+- Parallel processing with progress tracking
+- ZIP download containing all converted files
+- Optimized for bulk operations
+
+**3. Export Presets Mode:**
+- Platform-specific icon packages (iOS, Android, Web, Windows)
+- Pre-configured size sets for each platform
+- Professional naming conventions and folder structures
+- Single image input generates complete platform packages
 
 ### Key Components
 
-- **`src/app/page.tsx`**: Main application container with premium hero section, glassmorphism layout, and enhanced brand representation
-- **`src/app/components/FileUploader.tsx`**: Advanced drag-and-drop uploader with glassmorphism styling, animated states, and premium UI feedback
-- **`src/app/components/Preview.tsx`**: Sophisticated preview system with glass cards, interactive size selection, and animated conversion states
-- **`src/app/components/FormatSupport.tsx`**: Floating glassmorphism info panel with detailed format support and professional tips
-- **`src/app/utils/imageToIco.ts`**: Universal image conversion logic using Canvas API with timeout protection
-- **`src/app/utils/imageFormats.ts`**: Comprehensive format detection, validation, and metadata handling
-- **`src/app/utils/canvasHelpers.ts`**: High-quality image processing utilities for resampling and transparency handling
-- **`src/app/utils/workerManager.ts`**: Web Worker coordination for heavy processing (prepared for future enhancements)
-- **`src/app/globals.css`**: Advanced glassmorphism design system with custom animations, gradients, and visual effects
+**Core UI Components:**
+- **`src/app/page.tsx`**: Main application with three-mode interface, state management, and premium hero section
+- **`src/app/components/FileUploader.tsx`**: Single-file drag-and-drop uploader with format validation
+- **`src/app/components/BatchFileUploader.tsx`**: Multi-file uploader with parallel processing and progress tracking
+- **`src/app/components/Preview.tsx`**: Interactive preview system with size selection and format switching
+- **`src/app/components/ExportPresets.tsx`**: Platform preset selection interface (iOS, Android, Web, Windows)
+- **`src/app/components/SegmentedControl.tsx`**: Mode switching control for single/batch/preset modes
+- **`src/app/components/FormatSupport.tsx`**: Floating info panel with format guidance
+
+**Conversion Utilities:**
+- **`src/app/utils/imageToIco.ts`**: Core ICO conversion with multi-format support and Canvas API
+- **`src/app/utils/imageToSvg.ts`**: SVG conversion with intelligent sizing and optimization
+- **`src/app/utils/imageFormats.ts`**: Format detection, validation, and metadata handling
+- **`src/app/utils/canvasHelpers.ts`**: High-quality image processing and resampling utilities
+- **`src/app/utils/exportPresets.ts`**: Platform preset definitions and configuration
+- **`src/app/utils/presetExporter.ts`**: Batch preset export with ZIP packaging
+- **`src/app/utils/batchWorkerManager.ts`**: Web Worker coordination for batch processing
+- **`src/app/utils/workerManager.ts`**: General-purpose worker management utilities
+
+**Styling:**
+- **`src/app/globals.css`**: Advanced glassmorphism design system with brand colors and animations
 
 ### Multi-Format Conversion Process
 
@@ -159,11 +201,54 @@ Advanced CSS utility classes for consistent glass design:
 
 ## State Management
 
-Enhanced React state management in main page component:
+The main application (`src/app/page.tsx`) manages complex state across three processing modes:
+
+**Core Single-File State:**
 - `imageFile`: Original uploaded file (any supported format)
 - `imageDataUrl`: Base64 data URL for processing
 - `imageMetadata`: Format detection results with dimensions
-- `icoDataUrl`: Generated ICO object URL for download
+- `convertedUrl`: Generated output file URL (ICO/SVG)
+- `currentFormat`: Selected output format ('ico' | 'svg')
 - `error`: Format-specific validation/conversion error messages
 
-The state flows unidirectionally: FileUploader → Preview → Download, with format detection and metadata enrichment at each stage. All components maintain glassmorphism styling consistency throughout state changes.
+**Mode Management:**
+- `processingMode`: Current mode ('single' | 'batch' | 'presets')
+- `selectedSizes`: Set of ICO sizes for conversion (16, 32, 48, 64, 128, 256)
+- `svgSelectedSizes`: Set of SVG sizes for conversion (32, 64, 128)
+
+**Preset Export State:**
+- `selectedPreset`: Currently selected export preset (iOS, Android, etc.)
+- `isExportingPreset`: Loading state during preset export
+- `presetProgress`: Progress tracking for batch preset operations
+- `presetExportResult`: Results and download info for completed preset exports
+
+State flows vary by mode:
+- **Single**: FileUploader → Preview → Download
+- **Batch**: BatchFileUploader → Progress Tracking → ZIP Download
+- **Presets**: PresetSelector → FileUploader → Automated Export → Download
+
+## Testing Architecture
+
+Comprehensive E2E testing with Playwright covering all three processing modes:
+
+**Test Structure:**
+- `tests/e2e/basic.spec.ts`: Core application loading and UI tests
+- `tests/e2e/upload.spec.ts`: File upload and validation tests
+- `tests/e2e/conversion.spec.ts`: Single-file conversion functionality
+- `tests/e2e/batch-processing.spec.ts`: Bulk conversion workflows
+- `tests/e2e/export-presets.spec.ts`: Platform preset export tests
+- `tests/e2e/ui-interactions.spec.ts`: User interface interaction tests
+- `tests/e2e/error-handling.spec.ts`: Error states and recovery
+- `tests/e2e/performance.spec.ts`: Performance and timeout testing
+
+**Test Configuration:**
+- Multi-browser testing (Chrome, Firefox, Safari, Edge)
+- Mobile device testing (Pixel 5, iPhone 12)
+- Automatic dev server startup
+- Screenshot and video capture on failures
+- JUnit XML reporting for CI/CD integration
+
+**Test Fixtures:**
+- `tests/fixtures/images/`: Sample images in all supported formats
+- `tests/fixtures/helpers/`: Reusable test helper functions
+- Automated test image generation for consistency
