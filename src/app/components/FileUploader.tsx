@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useRef } from 'react';
-import { validateImageFile, getSupportedMimeTypes, getSupportedExtensions, getFormatSpecificMessage } from '../utils/imageFormats';
+import { validateImageFile, getSupportedMimeTypes, getSupportedExtensions, getFormatSpecificMessage, analyzeWebPFile, getWebPCompatibilityInfo } from '../utils/imageFormats';
 import { getImageDimensions } from '../utils/canvasHelpers';
 
 interface FileUploaderProps {
@@ -62,6 +62,32 @@ export default function FileUploader({ onFileSelect, onError, error }: FileUploa
       if (formatMessage) {
         // This is informational, not an error
         console.log('Format info:', formatMessage);
+      }
+
+      // Special handling for WebP files
+      if (format.formatKey === 'webp') {
+        try {
+          const webpAnalysis = await analyzeWebPFile(file);
+          const compatibilityInfo = getWebPCompatibilityInfo();
+          
+          if (webpAnalysis.recommendation) {
+            console.log('WebP Analysis:', webpAnalysis.recommendation);
+          }
+          
+          if (!compatibilityInfo.supported && compatibilityInfo.recommendation) {
+            console.log('WebP Compatibility:', compatibilityInfo.recommendation);
+          }
+          
+          // Log WebP-specific info for debugging
+          console.log('WebP file analysis:', {
+            isAnimated: webpAnalysis.isAnimated,
+            hasTransparency: webpAnalysis.hasTransparency,
+            estimatedQuality: webpAnalysis.estimatedQuality,
+            browserSupported: compatibilityInfo.supported
+          });
+        } catch (webpError) {
+          console.warn('WebP analysis failed:', webpError);
+        }
       }
 
       // Read file for preview/processing
