@@ -294,8 +294,12 @@ function getDefaultSvgSizes(formatKey: string): number[] {
       // For PNG (often logos/icons), focus on icon and web sizes
       return [32, 64, 128, 256];
     
-    case 'jpeg':
     case 'webp':
+      // For WebP, prioritize modern web sizes with excellent compression
+      // WebP excels at both small icons and large displays
+      return [64, 128, 192, 256, 384];
+    
+    case 'jpeg':
       // For photos, focus on larger display sizes with some web sizes
       return [128, 256, 384, 512];
     

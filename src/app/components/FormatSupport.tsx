@@ -100,6 +100,10 @@ export default function FormatSupport() {
               <span className="inline-block w-2 h-2 rounded-full bg-classic-blue mr-2"></span>
               <strong>JPEG:</strong> Great for photos (white background added)
             </div>
+            <div className="text-xs font-medium" style={{color: '#36454F', opacity: 0.9}}>
+              <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-blue-500 mr-2"></span>
+              <strong>WebP:</strong> Modern format with superior compression and quality
+            </div>
           </div>
           
           <div className="mt-4 pt-3 border-t border-white/10">

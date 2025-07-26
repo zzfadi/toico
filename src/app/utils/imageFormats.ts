@@ -162,10 +162,118 @@ export function isBrowserSupported(mimeType: string): boolean {
 }
 
 /**
+ * Get WebP-specific browser compatibility information
+ */
+export function getWebPCompatibilityInfo(): {
+  supported: boolean;
+  message?: string;
+  recommendation?: string;
+} {
+  const isSupported = isBrowserSupported('image/webp');
+  
+  if (isSupported) {
+    return {
+      supported: true,
+      message: 'Your browser fully supports WebP format processing.'
+    };
+  }
+  
+  return {
+    supported: false,
+    message: 'Your browser has limited WebP support. Conversion will still work, but preview quality may be reduced.',
+    recommendation: 'For best results with WebP files, use Chrome 32+, Firefox 65+, Safari 14+, or Edge 18+.'
+  };
+}
+
+/**
+ * Analyze WebP file characteristics
+ */
+export async function analyzeWebPFile(file: File): Promise<{
+  isAnimated: boolean;
+  hasTransparency: boolean;
+  estimatedQuality: 'high' | 'medium' | 'low';
+  recommendation?: string;
+}> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+      if (!arrayBuffer) {
+        resolve({
+          isAnimated: false,
+          hasTransparency: true, // Default assumption for WebP
+          estimatedQuality: 'medium'
+        });
+        return;
+      }
+
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Basic WebP header analysis
+      // WebP file signature: 'RIFF' + size + 'WEBP'
+      const isValidWebP = 
+        uint8Array[0] === 0x52 && uint8Array[1] === 0x49 && // 'RI'
+        uint8Array[2] === 0x46 && uint8Array[3] === 0x46 && // 'FF'
+        uint8Array[8] === 0x57 && uint8Array[9] === 0x45 && // 'WE'
+        uint8Array[10] === 0x42 && uint8Array[11] === 0x50; // 'BP'
+
+      if (!isValidWebP) {
+        resolve({
+          isAnimated: false,
+          hasTransparency: true,
+          estimatedQuality: 'medium'
+        });
+        return;
+      }
+
+      // Check for animation (ANIM chunk)
+      const hasAnimChunk = arrayBuffer.byteLength > 100 && 
+        new TextDecoder().decode(uint8Array.slice(12, 100)).includes('ANIM');
+
+      // Estimate quality based on file size vs dimensions
+      const fileSizeKB = file.size / 1024;
+      let estimatedQuality: 'high' | 'medium' | 'low' = 'medium';
+      
+      if (fileSizeKB > 500) {
+        estimatedQuality = 'high';
+      } else if (fileSizeKB < 50) {
+        estimatedQuality = 'low';
+      }
+
+      const result = {
+        isAnimated: hasAnimChunk,
+        hasTransparency: true, // WebP supports transparency
+        estimatedQuality,
+        recommendation: hasAnimChunk 
+          ? 'Animated WebP detected. Only the first frame will be used for ICO conversion.'
+          : estimatedQuality === 'low' 
+            ? 'Low quality WebP detected. Consider using a higher quality source for better results.'
+            : undefined
+      };
+
+      resolve(result);
+    };
+
+    reader.onerror = () => {
+      resolve({
+        isAnimated: false,
+        hasTransparency: true,
+        estimatedQuality: 'medium'
+      });
+    };
+
+    // Read first 1KB for analysis
+    reader.readAsArrayBuffer(file.slice(0, 1024));
+  });
+}
+
+/**
  * Get format-specific validation messages
  */
 export function getFormatSpecificMessage(formatKey: string): string | null {
   switch (formatKey) {
+    case 'webp':
+      return 'Note: WebP format provides excellent compression with transparency support. Animated WebP files will use the first frame for conversion.';
     case 'gif':
       return 'Note: For animated GIFs, only the first frame will be used for ICO conversion.';
     case 'jpg':
